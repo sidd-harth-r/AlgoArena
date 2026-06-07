@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "complexity-engine"
+version = "0.1.0"
+description = "Static Big-O complexity inference for Python code via AST analysis"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["tree-sitter>=0.21", "tree-sitter-python>=0.21"]
+
+[tool.setuptools.packages.find]
+where = ["."]

@@ -1,0 +1,1968 @@
+---FILE: C:\Users\siddh\Downloads\AlgoArena_InternPrompt.docx
+AlgoArena
+Intern Build Assignment
+Complete Project Prompt — Read This Once, Build Everything
+0. What You Are Building
+AlgoArena is a web-based competitive programming platform — think LeetCode, but with one feature that does not exist anywhere else: after you submit code, the platform infers the Big-O time complexity of your solution using static AST analysis (not runtime benchmarking) and passes that complexity gap to an AI that generates a Socratic hint. The hint does not tell you the answer. It asks you the question that leads you there.
+0.1 The Three Layers of Feedback
+Layer 1 — Execution feedback (every judge has this): Pass / fail per test case, runtime in ms, error type (TLE, MLE, compile error, runtime error).
+Layer 2 — Complexity feedback (our differentiator): Static Big-O inference from the submitted AST. No other public judge does this.
+Layer 3 — Socratic AI hint (our differentiator): Complexity gap fed to Claude. The model is constrained to ask a question, not give the answer.
+0.2 What You Are NOT Building
+Scope creep is how interns fail. The following are explicitly out of scope for this internship. Do not build them.
+A leaderboard or ranking system
+A DP-based personalised learning path scheduler
+AI-generated test cases (unreliable without human review)
+Multi-language AST analysis (Python only for v1)
+A user study or analytics pipeline
+Social features, comments, or discussion threads
+1. Environment Setup (Day 1)
+Do this before anything else. Do not skip any step. If you hit an error, Google it. If you are still stuck after 30 minutes, ping your senior.
+1.1 Prerequisites — Install These First
+Node.js v20 LTS (use nvm: nvm install 20 && nvm use 20)
+Python 3.11 (use pyenv: pyenv install 3.11.9 && pyenv global 3.11.9)
+Docker Desktop — download from docker.com/products/docker-desktop and ensure it is running
+Git — configure your name and email: git config --global user.name "Your Name"
+VS Code with these extensions: ESLint, Prettier, Python (Microsoft), Pylance, Docker
+pgAdmin 4 or TablePlus — for inspecting the PostgreSQL database visually
+1.2 Clone and Initialise the Monorepo
+Create a new public GitHub repository named algoarena under your personal account. Then run:
+1.3 Docker Compose — Infrastructure
+Create docker-compose.yml in the project root. This single file starts your entire backend infrastructure. Copy it exactly:
+Start it with: docker compose up -d
+Verify it works: open http://localhost:2358 in your browser. You should see the Judge0 API welcome page.
+1.4 Environment Variables
+Create apps/api/.env (never commit this file):
+Create apps/web/.env.local (never commit this file):
+2. Database Schema (Week 1)
+All data lives in PostgreSQL. Use SQLAlchemy for the ORM and Alembic for migrations. Create apps/api/models/models.py with the following exact schema. Do not rename columns — the rest of the codebase depends on these names.
+2.1 Complete SQLAlchemy Models
+2.2 Running Migrations
+3. FastAPI Backend (Weeks 1–2)
+3.1 Main App Entry Point
+Create apps/api/main.py:
+3.2 Database Connection
+3.3 Submissions Router — The Core Flow
+This is the most important file in the backend. Read it carefully. Every submission goes through this exact sequence.
+3.4 Judge0 Client Service
+4. Complexity Engine (Week 5)
+This is the hardest part of the project and the most important. Read the entire section before writing any code.
+4.1 How Tree-sitter Works
+Tree-sitter is a parser library. You give it source code, it gives you an Abstract Syntax Tree (AST). An AST is a tree where each node represents a syntactic construct: a function definition, a for loop, a function call, etc. You walk this tree to detect patterns.
+4.2 The Inference Rules
+These are the exact rules your engine must implement. They are applied in order of precedence (highest to lowest):
+4.3 Implementation
+4.4 Unit Tests for the Complexity Engine
+5. AI Tutor (Week 6)
+The AI tutor is triggered after evaluation completes. It streams a response using Server-Sent Events (SSE). The prompt is the core intellectual contribution of this project — do not modify it without approval.
+5.1 The Prompt
+5.2 AI Router with Rate Limiting
+6. Next.js Frontend (Weeks 3–4)
+6.1 Folder Structure
+6.2 Monaco Editor Component
+6.3 Result Panel — All Error States
+6.4 AI Tutor Panel — SSE Streaming
+7. Authentication (Week 4)
+Use NextAuth.js with the GitHub provider. This gives you production-grade OAuth without building it from scratch.
+7.1 NextAuth Configuration
+7.2 Protecting Routes
+8. Problem Set — 30 Problems (Week 4)
+You need exactly 30 problems seeded into the database. Each problem must have at least 10 hidden test cases.
+8.1 Problem Distribution
+8.2 Seed Script Structure
+9. Publishing the Complexity Engine as a pip Package
+The complexity engine must also live as a standalone pip package under packages/complexity-engine/. This makes it publishable and reusable as a portfolio piece.
+9.1 Package Structure
+9.2 pyproject.toml
+9.3 Publishing to TestPyPI
+10. Deployment (Week 8)
+10.1 Backend on Railway
+Go to railway.app, sign in with GitHub.
+New Project > Deploy from GitHub Repo > select algoarena.
+Add a PostgreSQL service and a Redis service from the Railway plugin marketplace.
+Set environment variables in the Railway dashboard (same as your .env but with production values).
+Add a Dockerfile to apps/api/: FROM python:3.11-slim > COPY requirements.txt > RUN pip install -r requirements.txt > CMD uvicorn main:app --host 0.0.0.0 --port 8000
+Set the root directory to apps/api in Railway settings.
+Railway auto-deploys on every push to main.
+10.2 Frontend on Vercel
+Go to vercel.com, sign in with GitHub.
+New Project > Import algoarena > set Root Directory to apps/web.
+Add all environment variables from .env.local (update NEXT_PUBLIC_API_URL to your Railway backend URL).
+Vercel auto-deploys on every push to main.
+10.3 Judge0 — Important Note
+11. Week-by-Week Checklist
+Use this as your daily reference. Do not move to the next week until every item in the current week is ticked.
+12. Common Mistakes — Read Before You Start
+Mistake 1: Blocking the FastAPI event loop
+If you call Judge0 synchronously inside an async function using requests.get() instead of httpx.AsyncClient, every submission will block the entire server. Use async/await everywhere inside async def functions.
+Mistake 2: Storing secrets in git
+Your .env and .env.local files must be in .gitignore before the first commit. Run: echo '.env' >> .gitignore && echo '.env.local' >> .gitignore before git add.
+Mistake 3: Polling without a timeout
+Your frontend polling loop must have a maximum retry count (e.g., 20 retries x 1.5s = 30s timeout). Without it, a broken submission will poll forever and drain the user's battery.
+Mistake 4: Tree-sitter grammar version mismatch
+tree-sitter and tree-sitter-python must be compatible versions. Pin them: tree-sitter==0.21.3 and tree-sitter-python==0.21.0 in requirements.txt. Mixing major versions breaks the Language() constructor.
+Mistake 5: SSE connection not closed on component unmount
+In AiTutorPanel, the AbortController ref must call abort() in a useEffect cleanup function. Without it, navigating away from a problem page while a hint is streaming will cause React state updates on unmounted components.
+Mistake 6: Test case format inconsistency
+Your seed script must produce test case inputs in exactly the format the submitted code expects. For Two Sum, the input is two lines: the array on line 1, the target on line 2. Document this format in a comment next to each problem's test cases.
+Mistake 7: Modifying the AI prompt without approval
+The Socratic constraint in the system prompt is the product's intellectual contribution. If you modify it to 'be more helpful' by giving more direct answers, you break the product. Do not change the prompt without discussing it first.
+13. Final Deliverables
+On the last day of Week 8, send your senior a Slack message with all of the following. Incomplete submissions will be reviewed in the next sprint.
+[TABLE]
+Assigned by / Senior Developer | Stack / Next.js + FastAPI + Python | Timeline / 8 weeks | Deliverable / Live URL + GitHub Repo
+[TABLE]
+READ FIRST | This document is your single source of truth. Do not ask your senior for clarifications that are already answered here. Read every section before writing a single line of code. Each phase builds on the previous one — skipping ahead will cost you more time than it saves. / When you finish each week, send a brief Slack message: what you built, what blocked you, what you are doing next.
+[TABLE]
+Why it matters | Every interviewer at Google, Meta, or Amazon will ask you to optimise your solution. LeetCode shows you pass/fail. AlgoArena shows you WHY your solution is slow and nudges you toward the insight — without spoiling it. / As a portfolio piece, this project hits: systems design, algorithm analysis, AI integration, and production engineering. That is exactly what L4/L5 interviewers want to see.
+[TABLE]
+git clone https://github.com/YOUR_USERNAME/algoarena.git / cd algoarena /  / # Create the folder structure exactly as shown / mkdir -p apps/web apps/api/routers apps/api/services apps/api/models / mkdir -p packages/complexity-engine/parsers packages/complexity-engine/analyzers / mkdir -p scripts docker /  / # Initialise the Python backend / cd apps/api / python -m venv venv / source venv/bin/activate          # Windows: venv\Scripts\activate / pip install fastapi uvicorn sqlalchemy psycopg2-binary redis httpx python-dotenv / pip install tree-sitter tree-sitter-python alembic pytest / pip freeze > requirements.txt / cd ../.. /  / # Initialise the Next.js frontend / cd apps/web / npx create-next-app@latest . --typescript --tailwind --eslint --app --no-src-dir / npm install @monaco-editor/react axios swr next-auth / cd ../..
+[TABLE]
+# docker-compose.yml / version: '3.8' /  / services: /   judge0-server: /     image: judge0/judge0:1.13.1 /     ports: /       - '2358:2358' /     environment: /       REDIS_URL: redis://redis:6379 /       POSTGRES_HOST: db /       POSTGRES_DB: judge0 /       POSTGRES_USER: judge0 /       POSTGRES_PASSWORD: judge0secret /     depends_on: [db, redis] /     privileged: true /  /   judge0-workers: /     image: judge0/judge0:1.13.1 /     command: ['./scripts/workers'] /     environment: /       REDIS_URL: redis://redis:6379 /       POSTGRES_HOST: db /       POSTGRES_DB: judge0 /       POSTGRES_USER: judge0 /       POSTGRES_PASSWORD: judge0secret /     depends_on: [db, redis] /     privileged: true /  /   db: /     image: postgres:15 /     environment: /       POSTGRES_USER: algoarena /       POSTGRES_PASSWORD: localpassword /       POSTGRES_DB: algoarena /     ports: /       - '5432:5432' /     volumes: /       - pg_data:/var/lib/postgresql/data /  /   redis: /     image: redis:7-alpine /     ports: /       - '6379:6379' /  / volumes: /   pg_data:
+[TABLE]
+DATABASE_URL=postgresql://algoarena:localpassword@localhost:5432/algoarena / REDIS_URL=redis://localhost:6379 / JUDGE0_URL=http://localhost:2358 / ANTHROPIC_API_KEY=sk-ant-your-key-here / JWT_SECRET=a-long-random-string-change-this
+[TABLE]
+NEXTAUTH_URL=http://localhost:3000 / NEXTAUTH_SECRET=another-long-random-string / GITHUB_CLIENT_ID=your-github-oauth-app-id / GITHUB_CLIENT_SECRET=your-github-oauth-app-secret / NEXT_PUBLIC_API_URL=http://localhost:8000
+[TABLE]
+How to get GitHub OAuth keys | Go to github.com > Settings > Developer Settings > OAuth Apps > New OAuth App. / Homepage URL: http://localhost:3000   |   Callback URL: http://localhost:3000/api/auth/callback/github / Copy the Client ID and generate a Client Secret. Paste both into your .env.local.
+[TABLE]
+# apps/api/models/models.py / from sqlalchemy import Column, String, Integer, Boolean, DateTime, Text, ARRAY / from sqlalchemy import ForeignKey, Enum as SAEnum / from sqlalchemy.orm import declarative_base, relationship / from sqlalchemy.dialects.postgresql import UUID / from datetime import datetime / import uuid, enum /  / Base = declarative_base() /  / class SubmissionStatus(enum.Enum): /     PENDING            = 'PENDING' /     RUNNING            = 'RUNNING' /     ACCEPTED           = 'ACCEPTED' /     WRONG_ANSWER       = 'WRONG_ANSWER' /     TIME_LIMIT         = 'TIME_LIMIT_EXCEEDED' /     MEMORY_LIMIT       = 'MEMORY_LIMIT_EXCEEDED' /     RUNTIME_ERROR      = 'RUNTIME_ERROR' /     COMPILE_ERROR      = 'COMPILE_ERROR' /     INTERNAL_ERROR     = 'INTERNAL_ERROR' /  / class BigOClass(enum.Enum): /     O1     = 'O(1)' /     ON     = 'O(n)' /     ONlogN = 'O(n log n)' /     ON2    = 'O(n^2)' /     ON3    = 'O(n^3)' /     O2N    = 'O(2^n)' /  / class Difficulty(enum.Enum): /     EASY   = 'easy' /     MEDIUM = 'medium' /     HARD   = 'hard' /  / class User(Base): /     __tablename__ = 'users' /     id            = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4) /     email         = Column(String, unique=True, nullable=False) /     username      = Column(String, unique=True, nullable=False) /     avatar_url    = Column(String) /     created_at    = Column(DateTime, default=datetime.utcnow) /     streak_days   = Column(Integer, default=0) /     last_active   = Column(DateTime) /     submissions   = relationship('Submission', back_populates='user') /     hint_usages   = relationship('HintUsage',  back_populates='user') /  / class Problem(Base): /     __tablename__       = 'problems' /     id                  = Column(Integer, primary_key=True, autoincrement=True) /     title               = Column(String, nullable=False) /     slug                = Column(String, unique=True, nullable=False) /     statement_md        = Column(Text, nullable=False) /     difficulty          = Column(SAEnum(Difficulty), nullable=False) /     topic_tags          = Column(ARRAY(String), default=[]) /     optimal_complexity  = Column(SAEnum(BigOClass), nullable=False) /     editorial_md        = Column(Text) /     time_limit_ms       = Column(Integer, default=2000) /     memory_limit_mb     = Column(Integer, default=256) /     is_published        = Column(Boolean, default=False) /     test_cases          = relationship('TestCase',   back_populates='problem') /     submissions         = relationship('Submission', back_populates='problem') /  / class TestCase(Base): /     __tablename__ = 'test_cases' /     id            = Column(Integer, primary_key=True, autoincrement=True) /     problem_id    = Column(Integer, ForeignKey('problems.id'), nullable=False) /     input_data    = Column(Text, nullable=False) /     expected_out  = Column(Text, nullable=False) /     is_hidden     = Column(Boolean, default=True) /     display_order = Column(Integer, default=0) /     problem       = relationship('Problem', back_populates='test_cases') /  / class Submission(Base): /     __tablename__       = 'submissions' /     id                  = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4) /     user_id             = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False) /     problem_id          = Column(Integer, ForeignKey('problems.id'), nullable=False) /     code                = Column(Text, nullable=False) /     language            = Column(String, nullable=False) /     status              = Column(SAEnum(SubmissionStatus), default=SubmissionStatus.PENDING) /     passed_count        = Column(Integer, default=0) /     total_count         = Column(Integer, default=0) /     runtime_ms          = Column(Integer) /     memory_kb           = Column(Integer) /     error_message       = Column(Text) /     failed_input        = Column(Text) /     expected_output     = Column(Text) /     actual_output       = Column(Text) /     judge0_token        = Column(String) /     user_complexity     = Column(SAEnum(BigOClass)) /     optimal_complexity  = Column(SAEnum(BigOClass)) /     is_optimal          = Column(Boolean) /     created_at          = Column(DateTime, default=datetime.utcnow) /     user                = relationship('User',    back_populates='submissions') /     problem             = relationship('Problem', back_populates='submissions') /  / class HintUsage(Base): /     __tablename__ = 'hint_usage' /     id            = Column(Integer, primary_key=True, autoincrement=True) /     user_id       = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False) /     problem_id    = Column(Integer, ForeignKey('problems.id'), nullable=False) /     hint_count    = Column(Integer, default=0) /     last_hint_at  = Column(DateTime) /     user          = relationship('User',    back_populates='hint_usages')
+[TABLE]
+cd apps/api / source venv/bin/activate / alembic init alembic / # Edit alembic/env.py: set target_metadata = Base.metadata / # Edit alembic.ini: set sqlalchemy.url = postgresql://algoarena:localpassword@localhost:5432/algoarena / alembic revision --autogenerate -m 'initial schema' / alembic upgrade head / # Verify: open TablePlus/pgAdmin, connect to localhost:5432, you should see all 5 tables
+[TABLE]
+# apps/api/main.py / from fastapi import FastAPI / from fastapi.middleware.cors import CORSMiddleware / from routers import submissions, problems, users, ai / from models.database import engine, Base /  / Base.metadata.create_all(bind=engine) /  / app = FastAPI(title='AlgoArena API', version='1.0.0') /  / app.add_middleware( /     CORSMiddleware, /     allow_origins=['http://localhost:3000'], /     allow_credentials=True, /     allow_methods=['*'], /     allow_headers=['*'], / ) /  / app.include_router(problems.router,    prefix='/problems',    tags=['problems']) / app.include_router(submissions.router, prefix='/submissions', tags=['submissions']) / app.include_router(users.router,       prefix='/users',       tags=['users']) / app.include_router(ai.router,          prefix='/ai',          tags=['ai']) /  / @app.get('/health') / def health(): return {'status': 'ok'} /  / # Run with: uvicorn main:app --reload --port 8000
+[TABLE]
+# apps/api/models/database.py / from sqlalchemy import create_engine / from sqlalchemy.orm import sessionmaker / from dotenv import load_dotenv / import os /  / load_dotenv() / DATABASE_URL = os.getenv('DATABASE_URL') / engine = create_engine(DATABASE_URL) / SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine) /  / def get_db(): /     db = SessionLocal() /     try: /         yield db /     finally: /         db.close()
+[TABLE]
+# apps/api/routers/submissions.py / from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks / from sqlalchemy.orm import Session / from models.database import get_db / from models.models import Submission, Problem, TestCase, SubmissionStatus, BigOClass / from services.judge import submit_to_judge0 / from services.complexity import infer_complexity / from pydantic import BaseModel / import uuid /  / router = APIRouter() /  / class SubmitRequest(BaseModel): /     problem_id: int /     code: str /     language: str /  / @router.post('/') / async def create_submission(req: SubmitRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)): /     problem = db.query(Problem).filter(Problem.id == req.problem_id).first() /     if not problem: /         raise HTTPException(status_code=404, detail='Problem not found') /  /     sub = Submission( /         id=uuid.uuid4(), /         problem_id=req.problem_id, /         user_id='00000000-0000-0000-0000-000000000001', /         code=req.code, /         language=req.language, /         status=SubmissionStatus.PENDING, /         total_count=len(problem.test_cases), /         optimal_complexity=problem.optimal_complexity, /     ) /     db.add(sub) /     db.commit() /     db.refresh(sub) /     background_tasks.add_task(evaluate_submission, str(sub.id), req.code, req.language, problem, db) /     return {'submission_id': str(sub.id), 'status': 'PENDING'} /  / @router.get('/{submission_id}') / def get_submission(submission_id: str, db: Session = Depends(get_db)): /     sub = db.query(Submission).filter(Submission.id == submission_id).first() /     if not sub: /         raise HTTPException(status_code=404, detail='Submission not found') /     return { /         'id':               str(sub.id), /         'status':           sub.status.value, /         'passed_count':     sub.passed_count, /         'total_count':      sub.total_count, /         'user_complexity':  sub.user_complexity.value if sub.user_complexity else None, /         'optimal_complexity': sub.optimal_complexity.value if sub.optimal_complexity else None, /         'is_optimal':       sub.is_optimal, /     }
+[TABLE]
+# apps/api/services/judge.py / import httpx, os, base64 /  / JUDGE0_URL = os.getenv('JUDGE0_URL', 'http://localhost:2358') / LANGUAGE_IDS = { 'python': 71, 'javascript': 63, 'cpp': 54 } /  / async def submit_to_judge0(code: str, language: str, stdin: str, time_limit_ms: int): /     lang_id = LANGUAGE_IDS.get(language, 71) /     payload = { /         'source_code':    base64.b64encode(code.encode()).decode(), /         'language_id':    lang_id, /         'stdin':          base64.b64encode(stdin.encode()).decode(), /         'cpu_time_limit': time_limit_ms / 1000, /         'encode_source':  True, /         'encode_stdin':   True, /     } /     async with httpx.AsyncClient() as client: /         resp = await client.post(f'{JUDGE0_URL}/submissions?wait=true', json=payload, timeout=30) /         resp.raise_for_status() /         data = resp.json() /         for field in ['stdout', 'stderr', 'compile_output']: /             if data.get(field): /                 data[field] = base64.b64decode(data[field]).decode(errors='replace') /         return data
+[TABLE]
+Philosophy | We are inferring Big-O from code structure, not measuring runtime. This is static analysis. A nested for loop is O(n^2) regardless of whether it runs in 1ms or 10s. / We only support Python in v1. We gracefully degrade when we cannot determine the complexity (user_complexity stays null). This is documented behaviour, not a bug.
+[TABLE]
+pip install tree-sitter tree-sitter-python /  / python3 -c " / from tree_sitter import Language, Parser / import tree_sitter_python as tspython / PY_LANGUAGE = Language(tspython.language()) / parser = Parser(PY_LANGUAGE) / tree = parser.parse(b'for i in range(n): pass') / print(tree.root_node.sexp()) / "
+[TABLE]
+Priority | Pattern Detected | Inferred Complexity
+1 (highest) | A loop nested 3+ levels deep (for inside for inside for) | O(n^3)
+2 | A recursive function with 2 recursive calls (no @lru_cache) | O(2^n)
+3 | A loop nested exactly 2 levels deep (for inside for) | O(n^2)
+4 | A call to sorted() or .sort() inside no loop | O(n log n)
+5 | A single for or while loop (no nesting, no recursion) | O(n)
+6 | A recursive function with @lru_cache decorator | O(n)
+7 (fallback) | No loops, no recursion detected | O(1)
+[TABLE]
+# apps/api/services/complexity.py / from tree_sitter import Language, Parser, Node / import tree_sitter_python as tspython / from models.models import BigOClass /  / PY_LANGUAGE = Language(tspython.language()) / _parser = Parser(PY_LANGUAGE) /  / def infer_complexity(code: str) -> BigOClass: /     tree = _parser.parse(code.encode()) /     root = tree.root_node /     max_loop_depth = _max_loop_depth(root, 0) /     has_recursion, has_memo, branch_count = _check_recursion(root) /     has_sort = _has_sort_call(root) /  /     if max_loop_depth >= 3:                                    return BigOClass.ON3 /     if has_recursion and not has_memo and branch_count >= 2:   return BigOClass.O2N /     if max_loop_depth == 2:                                    return BigOClass.ON2 /     if has_sort and max_loop_depth == 0:                       return BigOClass.ONlogN /     if max_loop_depth == 1 or (has_recursion and has_memo):    return BigOClass.ON /     return BigOClass.O1
+[TABLE]
+# apps/api/tests/test_complexity.py / from services.complexity import infer_complexity / from models.models import BigOClass /  / def test_single_loop():    assert infer_complexity('for i in range(n): pass') == BigOClass.ON / def test_nested_loop():    assert infer_complexity('for i in r(n):\n for j in r(n): pass') == BigOClass.ON2 / def test_triple_loop():    assert infer_complexity('for i in r(n):\n for j in r(n):\n  for k in r(n): pass') == BigOClass.ON3 / def test_sorted_no_loop(): assert infer_complexity('x = sorted(arr)') == BigOClass.ONlogN / def test_constant():       assert infer_complexity('x = a + b') == BigOClass.O1 /  / # Run: cd apps/api && pytest tests/test_complexity.py -v
+[TABLE]
+IMPORTANT | The prompt has two hard constraints: (1) it must NEVER name the optimal algorithm or data structure. (2) it must NEVER produce code or pseudocode. These constraints make it Socratic. Violating them turns the hint into a spoiler.
+[TABLE]
+# apps/api/services/ai_tutor.py / import anthropic, os /  / client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY')) /  / SYSTEM_PROMPT = """You are an expert algorithms tutor at a top CS university. / You give terse, precise, Socratic feedback. /  / ABSOLUTE RULES (never break these): / - Never name the optimal algorithm, data structure, or technique. / - Never write code, pseudocode, or step-by-step instructions. / - Never confirm or deny if the student guesses the algorithm. / - Keep your entire response under 150 words. / - Be direct. Do not use filler words like 'Great question!' / """ /  / def stream_hint(sub, problem_statement): /     user_msg = build_hint_context(sub, problem_statement) /     return client.messages.stream( /         model      = 'claude-haiku-4-5', /         max_tokens = 400, /         system     = SYSTEM_PROMPT, /         messages   = [{'role': 'user', 'content': user_msg}], /     )
+[TABLE]
+# apps/api/routers/ai.py / from fastapi import APIRouter, Depends, HTTPException / from fastapi.responses import StreamingResponse / from sqlalchemy.orm import Session / from models.database import get_db / from models.models import Submission, Problem, HintUsage, SubmissionStatus / from services.ai_tutor import stream_hint / from datetime import datetime /  / router    = APIRouter() / MAX_HINTS = 3 /  / @router.get('/hint/{submission_id}') / def get_hint(submission_id: str, db: Session = Depends(get_db)): /     sub = db.query(Submission).filter(Submission.id == submission_id).first() /     if not sub: /         raise HTTPException(status_code=404, detail='Submission not found') /  /     if sub.is_optimal and sub.status == SubmissionStatus.ACCEPTED: /         return {'skip': True, 'message': 'Solution is already optimal!'} /  /     usage = db.query(HintUsage).filter_by(user_id=sub.user_id, problem_id=sub.problem_id).first() /     if not usage: /         usage = HintUsage(user_id=sub.user_id, problem_id=sub.problem_id, hint_count=0) /         db.add(usage) /     if usage.hint_count >= MAX_HINTS: /         raise HTTPException(status_code=429, detail=f'Hint limit ({MAX_HINTS}) reached') /  /     usage.hint_count  += 1 /     usage.last_hint_at = datetime.utcnow() /     db.commit() /  /     problem = db.query(Problem).filter(Problem.id == sub.problem_id).first() /  /     def generate(): /         with stream_hint(sub, problem.statement_md) as stream: /             for text in stream.text_stream: /                 yield f'data: {text}\n\n' /         yield 'data: [DONE]\n\n' /  /     return StreamingResponse(generate(), media_type='text/event-stream')
+[TABLE]
+apps/web/ /   app/ /     page.tsx                       # Homepage / problem list /     problems/ /       page.tsx                     # Full problem list with filters /       [slug]/ /         page.tsx                   # Problem detail + editor /     dashboard/ /       page.tsx                     # User progress, heatmap /     api/ /       auth/[...nextauth]/route.ts  # NextAuth handler /   components/ /     Editor.tsx                     # Monaco editor wrapper /     ResultPanel.tsx                # Pass/fail display with error states /     AiTutorPanel.tsx               # Streaming hint display /     ProblemCard.tsx                # Card on the list page /     TopicHeatmap.tsx               # Dashboard heatmap /   lib/ /     api.ts                         # Typed API client functions /     auth.ts                        # NextAuth config
+[TABLE]
+// apps/web/components/Editor.tsx / 'use client'; / import Editor from '@monaco-editor/react'; / import { useState } from 'react'; /  / export default function CodeEditor({ problemId, onResult }) { /   const [code, setCode]         = useState(DEFAULT_PYTHON_STUB); /   const [language, setLanguage] = useState('python'); /   const [loading, setLoading]   = useState(false); /  /   const submit = async () => { /     setLoading(true); /     try { /       const res = await fetch('/api/submissions', { /         method: 'POST', /         headers: { 'Content-Type': 'application/json' }, /         body: JSON.stringify({ problem_id: problemId, code, language }), /       }); /       const { submission_id } = await res.json(); /       let result; /       let retries = 0; /       while (retries < 20) { /         await new Promise(r => setTimeout(r, 1500)); /         const poll = await fetch(`/api/submissions/${submission_id}`); /         result = await poll.json(); /         if (!['PENDING', 'RUNNING'].includes(result.status)) break; /         retries++; /       } /       onResult(result); /     } finally { /       setLoading(false); /     } /   }; /  /   return ( /     <div className='flex flex-col h-full'> /       <Editor height='100%' language={language} value={code} /         onChange={v => setCode(v ?? '')} theme='vs-dark' /         options={{ minimap: { enabled: false }, fontSize: 14 }} /> /     </div> /   ); / }
+[TABLE]
+// apps/web/components/ResultPanel.tsx / 'use client'; /  / export default function ResultPanel({ result }) { /   if (!result) return null; /   const statusConfig = { /     ACCEPTED:              { label: 'Accepted',              color: 'green',  icon: '✓' }, /     WRONG_ANSWER:          { label: 'Wrong Answer',          color: 'red',    icon: '✗' }, /     TIME_LIMIT_EXCEEDED:   { label: 'Time Limit Exceeded',   color: 'yellow', icon: '⏱' }, /     MEMORY_LIMIT_EXCEEDED: { label: 'Memory Limit Exceeded', color: 'yellow', icon: '■' }, /     RUNTIME_ERROR:         { label: 'Runtime Error',         color: 'red',    icon: '⚠' }, /     COMPILE_ERROR:         { label: 'Compile Error',         color: 'orange', icon: '⚠' }, /     INTERNAL_ERROR:        { label: 'Internal Error',        color: 'gray',   icon: '?' }, /   }; /   const cfg = statusConfig[result.status] ?? statusConfig.INTERNAL_ERROR; /   return ( /     <div className='p-4 space-y-3'> /       <div className={`flex items-center gap-2 text-${cfg.color}-400 font-semibold`}> /         <span>{cfg.icon}</span><span>{cfg.label}</span> /         <span className='text-gray-400 ml-auto'>{result.passed_count}/{result.total_count} tests</span> /       </div> /       {result.user_complexity && ( /         <div className='flex gap-3 text-sm'> /           <span className='text-gray-400'>Your complexity:</span> /           <span className={result.is_optimal ? 'text-green-400' : 'text-yellow-400'}> /             {result.user_complexity} /           </span> /         </div> /       )} /     </div> /   ); / }
+[TABLE]
+// apps/web/components/AiTutorPanel.tsx / 'use client'; / import { useState, useEffect, useRef } from 'react'; /  / const MAX_HINTS = 3; /  / export default function AiTutorPanel({ submissionId, isOptimal, hintsUsed }) { /   const [hint, setHint]       = useState(''); /   const [loading, setLoading] = useState(false); /   const [used, setUsed]       = useState(hintsUsed); /   const abortRef              = useRef(null); /  /   useEffect(() => { return () => { abortRef.current?.abort(); }; }, []); /  /   const fetchHint = async () => { /     if (!submissionId || used >= MAX_HINTS) return; /     setLoading(true); setHint(''); /     abortRef.current = new AbortController(); /     try { /       const res    = await fetch(`/api/hints/${submissionId}`, { signal: abortRef.current.signal }); /       const reader = res.body.getReader(); /       while (true) { /         const { value, done } = await reader.read(); /         if (done) break; /         const lines = new TextDecoder().decode(value).split('\n'); /         for (const line of lines) { /           if (line.startsWith('data: ')) { /             const text = line.slice(6); /             if (text === '[DONE]') break; /             setHint(prev => prev + text); /           } /         } /       } /       setUsed(prev => prev + 1); /     } finally { setLoading(false); } /   }; /  /   if (isOptimal) return <div className='p-4 text-green-400 text-sm'>Optimal solution!</div>; /   return ( /     <div className='p-4 space-y-3'> /       <div className='flex justify-between text-sm'> /         <span className='text-gray-300'>AI Tutor</span> /         <span className='text-gray-500'>{used}/{MAX_HINTS} hints used</span> /       </div> /       {hint && <div className='text-sm text-gray-200 whitespace-pre-wrap'>{hint}</div>} /       <button onClick={fetchHint} disabled={loading || used >= MAX_HINTS} /         className='text-sm px-3 py-1.5 rounded border border-blue-600 text-blue-400 disabled:opacity-40'> /         {loading ? 'Thinking...' : used >= MAX_HINTS ? 'Hint limit reached' : 'Get a hint'} /       </button> /     </div> /   ); / }
+[TABLE]
+// apps/web/lib/auth.ts / import NextAuth from 'next-auth'; / import GitHub from 'next-auth/providers/github'; /  / export const { handlers, auth, signIn, signOut } = NextAuth({ /   providers: [GitHub({ clientId: process.env.GITHUB_CLIENT_ID!, clientSecret: process.env.GITHUB_CLIENT_SECRET! })], /   callbacks: { /     async session({ session, token }) { /       session.user.id = token.sub!; /       return session; /     }, /   }, / }); /  / // apps/web/app/api/auth/[...nextauth]/route.ts / import { handlers } from '@/lib/auth'; / export const { GET, POST } = handlers;
+[TABLE]
+import { auth } from '@/lib/auth'; / import { redirect } from 'next/navigation'; /  / export default async function DashboardPage() { /   const session = await auth(); /   if (!session) redirect('/'); /   return <Dashboard userId={session.user.id} />; / }
+[TABLE]
+# | Slug | Title | Topic | Difficulty | Optimal Complexity
+1 | two-sum | Two Sum | Hash maps | Easy | O(n)
+2 | best-time-buy-sell | Best Time to Buy and Sell | Arrays | Easy | O(n)
+3 | valid-parentheses | Valid Parentheses | Stacks | Easy | O(n)
+4 | merge-sorted-lists | Merge Two Sorted Lists | Linked lists | Easy | O(n)
+5 | maximum-subarray | Maximum Subarray | Arrays | Easy | O(n)
+6 | climbing-stairs | Climbing Stairs | DP | Easy | O(n)
+7 | palindrome-number | Palindrome Number | Math | Easy | O(log n)
+8 | reverse-linked-list | Reverse Linked List | Linked lists | Easy | O(n)
+9 | contains-duplicate | Contains Duplicate | Hash sets | Easy | O(n)
+10 | valid-anagram | Valid Anagram | Hash maps | Easy | O(n)
+11 | 3sum | 3Sum | Arrays | Medium | O(n^2)
+12 | longest-substring | Longest Substring No Repeat | Sliding window | Medium | O(n)
+13 | container-most-water | Container With Most Water | Two pointers | Medium | O(n)
+14 | group-anagrams | Group Anagrams | Hash maps | Medium | O(n)
+15 | top-k-frequent | Top K Frequent Elements | Hash maps | Medium | O(n)
+16 | product-except-self | Product of Array Except Self | Arrays | Medium | O(n)
+17 | coin-change | Coin Change | DP | Medium | O(n^2)
+18 | number-of-islands | Number of Islands | Graphs/BFS | Medium | O(n)
+19 | binary-search | Binary Search | Binary search | Easy | O(log n)
+20 | find-min-rotated | Find Min in Rotated Array | Binary search | Medium | O(log n)
+21 | search-rotated | Search in Rotated Array | Binary search | Medium | O(log n)
+22 | level-order-traversal | Binary Tree Level Order | Trees/BFS | Medium | O(n)
+23 | max-depth-tree | Max Depth of Binary Tree | Trees/DFS | Easy | O(n)
+24 | validate-bst | Validate Binary Search Tree | Trees | Medium | O(n)
+25 | lowest-common-ancestor | Lowest Common Ancestor | Trees | Medium | O(n)
+26 | word-search | Word Search | Graphs/DFS | Medium | O(n)
+27 | course-schedule | Course Schedule | Graphs/Topo | Medium | O(V+E)
+28 | trapping-rain-water | Trapping Rain Water | Two pointers | Hard | O(n)
+29 | median-two-arrays | Median of Two Sorted Arrays | Binary search | Hard | O(log n)
+30 | longest-increasing-subseq | Longest Increasing Subseq. | DP | Medium | O(n^2)
+[TABLE]
+# scripts/seed_problems.py / PROBLEMS = [ /   { /     'title':              'Two Sum', /     'slug':               'two-sum', /     'difficulty':         'easy', /     'topic_tags':         ['hash-maps', 'arrays'], /     'optimal_complexity': 'O(n)', /     'time_limit_ms':      2000, /     'memory_limit_mb':    256, /     'statement_md':       '## Two Sum\nGiven an array...', /     'editorial_md':       '## Approach: Hash Map\nUse a hash map...', /     'test_cases': [ /       {'input': '[2,7,11,15]\n9', 'expected': '[0,1]', 'hidden': False}, /       {'input': '[3,2,4]\n6',     'expected': '[1,2]', 'hidden': True}, /       # Add at least 8 more hidden test cases /     ], /   }, /   # ... repeat for all 30 problems / ]
+[TABLE]
+packages/complexity-engine/ /   complexity_engine/ /     __init__.py          # exports: infer_complexity, BigOClass /     parsers/ /       python_parser.py   # tree-sitter setup for Python /     analyzers/ /       loop_depth.py      # LoopDepthVisitor /       recursion.py       # RecursionPatternVisitor /       sort_calls.py      # SortCallDetector /       inference.py       # infer_complexity() entry point /   tests/ /     test_complexity.py /   pyproject.toml /   README.md
+[TABLE]
+[build-system] / requires = ['setuptools>=68', 'wheel'] / build-backend = 'setuptools.backends.legacy:build' /  / [project] / name            = 'complexity-engine' / version         = '0.1.0' / description     = 'Static Big-O complexity inference for Python code via Tree-sitter AST analysis' / readme          = 'README.md' / requires-python = '>=3.11' / dependencies    = ['tree-sitter>=0.21', 'tree-sitter-python>=0.21']
+[TABLE]
+cd packages/complexity-engine / pip install build twine / python -m build / twine upload --repository testpypi dist/* / pip install --index-url https://test.pypi.org/simple/ complexity-engine
+[TABLE]
+Goal | A recruiter must be able to click a URL, see the platform, submit a solution, and receive an AI hint — without signing in, without downloading anything, without reading instructions. / Deploy the frontend to Vercel and the backend to Railway. Both have free tiers.
+[TABLE]
+Cold start warning | Judge0 requires a privileged Docker container which Railway and Render do not support on free tier. For the demo, use the Judge0 Cloud free tier at judge0.com (free API key, 50 submissions/day). This is enough for a recruiter demo. / Update JUDGE0_URL in Railway to https://judge0-ce.p.rapidapi.com and add the RapidAPI key as a header in your judge.py client. / For production self-hosting, use a DigitalOcean Droplet ($4/month) and run docker compose up on it.
+[TABLE]
+Week | Must complete before moving on
+Week 1 / Infra + Schema | docker compose up shows Judge0 at localhost:2358. Alembic migration runs clean. All 5 tables visible in pgAdmin. GET /health returns {status: ok}. POST /submissions with hardcoded test returns a submission_id.
+Week 2 / Submission pipeline | All 6 error states (ACCEPTED, WRONG_ANSWER, TLE, MLE, RUNTIME_ERROR, COMPILE_ERROR) triggered and stored correctly. Background task completes. GET /submissions/:id returns final status within 10 seconds.
+Week 3 / Frontend editor | Monaco editor renders in browser. Submit button fires the polling loop. ResultPanel shows all error states with correct colours and details. No TypeScript errors.
+Week 4 / Problems + Auth | All 30 problems visible at /problems. GitHub OAuth login/logout works. User session persists across refresh. Problem detail page loads statement and editor. Seed script is idempotent (safe to run twice).
+Week 5 / Complexity engine | All 7 unit tests in test_complexity.py pass. infer_complexity() called in evaluate_submission() and result stored. User complexity shown in ResultPanel UI. Graceful null when analysis unavailable.
+Week 6 / AI tutor | GET /ai/hint/:id streams SSE tokens to AiTutorPanel. Hint renders word by word. Rate limit (3 hints) enforced in DB. Optimal submissions skip hint generation. Hint costs < $0.05 per full session.
+Week 7 / Polish | Dashboard heatmap shows solved problems by topic. Editorial pages render markdown. Rate-limit UI shows remaining hints. Mobile viewport (768px) renders without horizontal scroll. README has architecture diagram.
+Week 8 / Deploy | Live Vercel URL returns the platform. Railway backend /health returns 200. Submission on live URL completes end-to-end. Demo video recorded and linked in README. complexity-engine published to TestPyPI.
+[TABLE]
+These are real mistakes previous interns made | Each one cost at least 2 days of debugging. Read them now, not when you are stuck.
+[TABLE]
+useEffect(() => { /   return () => { abortRef.current?.abort(); };   // cleanup on unmount / }, []);
+[TABLE]
+Deliverable | Where | Acceptance Criteria
+Live demo URL | Vercel | Loads without error. User can submit Two Sum and receive a result within 10 seconds.
+GitHub repo URL | github.com | Public. No secrets in commits. Clean commit history (one commit per meaningful change, not 'fix fix fix').
+README.md | Repo root | Contains: project description, architecture diagram, local setup steps, known limitations of complexity engine, link to demo.
+Demo video | Loom (3 min) | Shows: problem list > open problem > submit O(n^2) solution > receive AI hint > resubmit O(n) solution > show complexity badge change.
+complexity-engine | TestPyPI | pip install --index-url https://test.pypi.org/simple/ complexity-engine works. README shows a usage example.
+[TABLE]
+Interview talking point (memorise this) | "I built AlgoArena, a coding judge where the core differentiator is a static complexity analysis engine built on Tree-sitter. It parses submitted code into an AST, runs a loop-depth visitor and recursion pattern matcher to infer Big-O class, then computes the gap between the user complexity and the editorial optimal. That gap gets passed alongside the code and test results to Claude, which generates a Socratic explanation — not the answer, but the question that leads there." / This answer hits: DAA, systems thinking, AI integration, and engineering depth. That is exactly what L4/L5 interviewers want to hear.
+---FILE: C:\Users\siddh\Downloads\AlgoArena_Assignment_Document.docx
+AlgoArena Assignment Document
+const {
+  Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+  HeadingLevel, AlignmentType, LevelFormat, BorderStyle, WidthType,
+  ShadingType, VerticalAlign, TabStopType, TabStopPosition,
+  Header, Footer, PageBreak, PageNumber, ExternalHyperlink
+} = require('docx');
+const fs = require('fs');
+
+// ── Color palette ─────────────────────────────────────────────────────────────
+const C = {
+  blue:        "1A56A0",
+  blueMid:     "2E75B6",
+  blueLight:   "D5E8F8",
+  bluePale:    "EBF3FB",
+  green:       "1A7A4A",
+  greenLight:  "E2F4EA",
+  amber:       "8B5E00",
+  amberLight:  "FFF4DC",
+  red:         "9B2020",
+  redLight:    "FDECEA",
+  purple:      "4A3B8C",
+  purpleLight: "EEECFB",
+  gray:        "444444",
+  grayMid:     "888888",
+  grayLight:   "F5F5F5",
+  grayBorder:  "CCCCCC",
+  dark:        "1A1A1A",
+  white:       "FFFFFF",
+  code:        "F0F4F8",
+  codeBorder:  "1A56A0",
+};
+
+// ── Border helpers ─────────────────────────────────────────────────────────────
+const bdr      = (color = C.grayBorder) => ({ style: BorderStyle.SINGLE, size: 1, color });
+const borders  = (color = C.grayBorder) => ({ top: bdr(color), bottom: bdr(color), left: bdr(color), right: bdr(color) });
+const noBdr    = () => ({ style: BorderStyle.NONE, size: 0, color: C.white });
+const noBorders= () => ({ top: noBdr(), bottom: noBdr(), left: noBdr(), right: noBdr() });
+const leftBdr  = (color, size = 12) => ({
+  top: noBdr(), bottom: noBdr(), right: noBdr(),
+  left: { style: BorderStyle.SINGLE, size, color }
+});
+
+// ── Typography helpers ─────────────────────────────────────────────────────────
+const font = "Arial";
+
+function h1(text) {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_1,
+    spacing: { before: 480, after: 160 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: C.blueMid, space: 6 } },
+    children: [new TextRun({ text, bold: true, size: 36, font, color: C.blue })]
+  });
+}
+function h2(text) {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_2,
+    spacing: { before: 360, after: 120 },
+    children: [new TextRun({ text, bold: true, size: 28, font, color: C.dark })]
+  });
+}
+function h3(text) {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_3,
+    spacing: { before: 240, after: 80 },
+    children: [new TextRun({ text, bold: true, size: 24, font, color: C.gray })]
+  });
+}
+function h4(text) {
+  return new Paragraph({
+    spacing: { before: 200, after: 60 },
+    children: [new TextRun({ text, bold: true, size: 22, font, color: C.gray })]
+  });
+}
+function p(runs) {
+  const children = Array.isArray(runs)
+    ? runs.map(r => typeof r === 'string'
+        ? new TextRun({ text: r, size: 22, font, color: C.dark })
+        : new TextRun({ size: 22, font, color: C.dark, ...r }))
+    : [new TextRun({ text: runs, size: 22, font, color: C.dark })];
+  return new Paragraph({ spacing: { before: 60, after: 100 }, children });
+}
+function note(text) {
+  return new Paragraph({
+    spacing: { before: 40, after: 60 },
+    children: [new TextRun({ text, size: 20, font, color: C.grayMid, italics: true })]
+  });
+}
+function bullet(text, level = 0, bold = false) {
+  return new Paragraph({
+    numbering: { reference: "bullets", level },
+    spacing: { before: 40, after: 40 },
+    children: [new TextRun({ text, size: 22, font, color: C.dark, bold })]
+  });
+}
+function subbullet(text) { return bullet(text, 1); }
+function numbered(text, level = 0) {
+  return new Paragraph({
+    numbering: { reference: "numbers", level },
+    spacing: { before: 60, after: 60 },
+    children: [new TextRun({ text, size: 22, font, color: C.dark })]
+  });
+}
+function sp(n = 1) {
+  return Array.from({ length: n }, () =>
+    new Paragraph({ spacing: { before: 0, after: 0 }, children: [new TextRun("")] })
+  );
+}
+function pageBreak() {
+  return new Paragraph({ children: [new PageBreak()] });
+}
+
+// ── Callout box ────────────────────────────────────────────────────────────────
+function callout(label, lines, bg, fg, borderColor) {
+  const cells = [
+    new TableCell({
+      borders: noBorders(),
+      shading: { fill: bg, type: ShadingType.CLEAR },
+      margins: { top: 100, bottom: 100, left: 160, right: 80 },
+      width: { size: 1400, type: WidthType.DXA },
+      verticalAlign: VerticalAlign.TOP,
+      children: [new Paragraph({
+        spacing: { before: 0, after: 0 },
+        children: [new TextRun({ text: label, bold: true, size: 19, font, color: fg })]
+      })]
+    }),
+    new TableCell({
+      borders: noBorders(),
+      shading: { fill: bg, type: ShadingType.CLEAR },
+      margins: { top: 100, bottom: 100, left: 80, right: 160 },
+      width: { size: 7960, type: WidthType.DXA },
+      children: lines.map(l => new Paragraph({
+        spacing: { before: 0, after: 60 },
+        children: [new TextRun({ text: l, size: 21, font, color: C.dark })]
+      }))
+    })
+  ];
+  return new Table({
+    width: { size: 9360, type: WidthType.DXA },
+    columnWidths: [1400, 7960],
+    borders: {
+      top: noBdr(), bottom: noBdr(), right: noBdr(), insideH: noBdr(), insideV: noBdr(),
+      left: { style: BorderStyle.SINGLE, size: 16, color: borderColor }
+    },
+    rows: [new TableRow({ children: cells })]
+  });
+}
+
+// ── Code block ─────────────────────────────────────────────────────────────────
+function codeBlock(lines) {
+  const paras = lines.map(l => new Paragraph({
+    spacing: { before: 0, after: 40 },
+    children: [new TextRun({ text: l, size: 19, font: "Courier New", color: C.dark })]
+  }));
+  return new Table({
+    width: { size: 9360, type: WidthType.DXA },
+    columnWidths: [9360],
+    rows: [new TableRow({
+      children: [new TableCell({
+        borders: {
+          top: bdr(C.grayBorder), bottom: bdr(C.grayBorder), right: bdr(C.grayBorder),
+          left: { style: BorderStyle.SINGLE, size: 12, color: C.blue }
+        },
+        shading: { fill: C.code, type: ShadingType.CLEAR },
+        margins: { top: 120, bottom: 120, left: 200, right: 160 },
+        width: { size: 9360, type: WidthType.DXA },
+        children: paras
+      })]
+    })]
+  });
+}
+
+// ── Section divider ────────────────────────────────────────────────────────────
+function divider() {
+  return new Paragraph({
+    spacing: { before: 200, after: 200 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: C.blueLight, space: 1 } },
+    children: [new TextRun("")]
+  });
+}
+
+// ── Simple table ───────────────────────────────────────────────────────────────
+function simpleTable(headers, rows, colWidths) {
+  const headerRow = new TableRow({
+    children: headers.map((h, i) => new TableCell({
+      borders: borders(C.grayBorder),
+      shading: { fill: C.blue, type: ShadingType.CLEAR },
+      margins: { top: 80, bottom: 80, left: 120, right: 120 },
+      width: { size: colWidths[i], type: WidthType.DXA },
+      children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 20, font, color: C.white })] })]
+    }))
+  });
+  const dataRows = rows.map((row, ri) =>
+    new TableRow({
+      children: row.map((cell, ci) => new TableCell({
+        borders: borders(C.grayBorder),
+        shading: { fill: ri % 2 === 0 ? C.white : C.grayLight, type: ShadingType.CLEAR },
+        margins: { top: 80, bottom: 80, left: 120, right: 120 },
+        width: { size: colWidths[ci], type: WidthType.DXA },
+        children: [new Paragraph({ children: [new TextRun({ text: cell, size: 20, font, color: C.dark })] })]
+      }))
+    })
+  );
+  return new Table({
+    width: { size: 9360, type: WidthType.DXA },
+    columnWidths: colWidths,
+    rows: [headerRow, ...dataRows]
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DOCUMENT
+// ══════════════════════════════════════════════════════════════════════════════
+const doc = new Document({
+  styles: {
+    default: { document: { run: { font, size: 22 } } },
+    paragraphStyles: [
+      { id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal", quickFormat: true,
+        run: { size: 36, bold: true, font, color: C.blue },
+        paragraph: { spacing: { before: 480, after: 160 }, outlineLevel: 0 } },
+      { id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal", quickFormat: true,
+        run: { size: 28, bold: true, font, color: C.dark },
+        paragraph: { spacing: { before: 360, after: 120 }, outlineLevel: 1 } },
+      { id: "Heading3", name: "Heading 3", basedOn: "Normal", next: "Normal", quickFormat: true,
+        run: { size: 24, bold: true, font, color: C.gray },
+        paragraph: { spacing: { before: 240, after: 80 }, outlineLevel: 2 } },
+    ]
+  },
+  numbering: {
+    config: [
+      { reference: "bullets", levels: [
+        { level: 0, format: LevelFormat.BULLET, text: "\u2022", alignment: AlignmentType.LEFT,
+          style: { paragraph: { indent: { left: 720, hanging: 360 } } } },
+        { level: 1, format: LevelFormat.BULLET, text: "\u25E6", alignment: AlignmentType.LEFT,
+          style: { paragraph: { indent: { left: 1200, hanging: 360 } } } },
+        { level: 2, format: LevelFormat.BULLET, text: "\u25AA", alignment: AlignmentType.LEFT,
+          style: { paragraph: { indent: { left: 1680, hanging: 360 } } } },
+      ]},
+      { reference: "numbers", levels: [
+        { level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.LEFT,
+          style: { paragraph: { indent: { left: 720, hanging: 360 } } } },
+        { level: 1, format: LevelFormat.DECIMAL, text: "%1.%2.", alignment: AlignmentType.LEFT,
+          style: { paragraph: { indent: { left: 1200, hanging: 360 } } } },
+      ]},
+      { reference: "steps", levels: [
+        { level: 0, format: LevelFormat.DECIMAL, text: "Step %1.", alignment: AlignmentType.LEFT,
+          style: { run: { bold: true }, paragraph: { indent: { left: 900, hanging: 540 } } } },
+      ]},
+    ]
+  },
+  sections: [{
+    properties: {
+      page: {
+        size: { width: 12240, height: 15840 },
+        margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }
+      }
+    },
+    headers: {
+      default: new Header({
+        children: [new Paragraph({
+          border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: C.blueLight, space: 4 } },
+          spacing: { after: 0 },
+          children: [
+            new TextRun({ text: "AlgoArena", bold: true, size: 20, font, color: C.blue }),
+            new TextRun({ text: "  \u2014  Senior Developer Intern Assignment Prompt", size: 20, font, color: C.grayMid }),
+          ]
+        })]
+      })
+    },
+    footers: {
+      default: new Footer({
+        children: [new Paragraph({
+          border: { top: { style: BorderStyle.SINGLE, size: 4, color: C.blueLight, space: 4 } },
+          spacing: { before: 0 },
+          tabStops: [{ type: TabStopType.RIGHT, position: TabStopPosition.MAX }],
+          children: [
+            new TextRun({ text: "Confidential \u2014 Internal Use Only", size: 18, font, color: C.grayMid }),
+            new TextRun({ text: "\t", size: 18, font }),
+            new TextRun({ children: [PageNumber.CURRENT], size: 18, font, color: C.grayMid }),
+          ]
+        })]
+      })
+    },
+
+    children: [
+
+      // ══════════════════════════════════════════════════════════════════════
+      // COVER PAGE
+      // ══════════════════════════════════════════════════════════════════════
+      new Paragraph({
+        spacing: { before: 960, after: 0 },
+        children: [new TextRun({ text: "AlgoArena", bold: true, size: 96, font, color: C.blue })]
+      }),
+      new Paragraph({
+        spacing: { before: 80, after: 40 },
+        children: [new TextRun({ text: "Intern Build Assignment", size: 40, font, color: C.gray })]
+      }),
+      new Paragraph({
+        spacing: { before: 0, after: 320 },
+        children: [new TextRun({ text: "Complete Project Prompt \u2014 Read This Once, Build Everything", size: 26, font, color: C.grayMid, italics: true })]
+      }),
+
+      new Table({
+        width: { size: 9360, type: WidthType.DXA },
+        columnWidths: [2340, 2340, 2340, 2340],
+        rows: [new TableRow({
+          children: [
+            ["Assigned by", "Senior Developer"],
+            ["Stack", "Next.js + FastAPI + Python"],
+            ["Timeline", "8 weeks"],
+            ["Deliverable", "Live URL + GitHub Repo"],
+          ].map(([label, val]) => new TableCell({
+            borders: noBorders(),
+            shading: { fill: C.bluePale, type: ShadingType.CLEAR },
+            margins: { top: 100, bottom: 100, left: 140, right: 140 },
+            width: { size: 2340, type: WidthType.DXA },
+            children: [
+              new Paragraph({ spacing: { before: 0, after: 40 }, children: [new TextRun({ text: label, size: 18, font, color: C.grayMid })] }),
+              new Paragraph({ spacing: { before: 0, after: 0 }, children: [new TextRun({ text: val, bold: true, size: 22, font, color: C.dark })] }),
+            ]
+          }))
+        })]
+      }),
+
+      ...sp(2),
+      callout("READ FIRST", [
+        "This document is your single source of truth. Do not ask your senior for clarifications that are already answered here. Read every section before writing a single line of code. Each phase builds on the previous one \u2014 skipping ahead will cost you more time than it saves.",
+        "When you finish each week, send a brief Slack message: what you built, what blocked you, what you are doing next.",
+      ], C.amberLight, C.amber, C.amber),
+
+      pageBreak(),
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 0 — WHAT YOU ARE BUILDING
+      // ══════════════════════════════════════════════════════════════════════
+      h1("0. What You Are Building"),
+      p("AlgoArena is a web-based competitive programming platform \u2014 think LeetCode, but with one feature that does not exist anywhere else: after you submit code, the platform infers the Big-O time complexity of your solution using static AST analysis (not runtime benchmarking) and passes that complexity gap to an AI that generates a Socratic hint. The hint does not tell you the answer. It asks you the question that leads you there."),
+      ...sp(1),
+      callout("Why it matters", [
+        "Every interviewer at Google, Meta, or Amazon will ask you to optimise your solution. LeetCode shows you pass/fail. AlgoArena shows you WHY your solution is slow and nudges you toward the insight \u2014 without spoiling it.",
+        "As a portfolio piece, this project hits: systems design, algorithm analysis, AI integration, and production engineering. That is exactly what L4/L5 interviewers want to see.",
+      ], C.greenLight, C.green, C.green),
+      ...sp(1),
+      h2("0.1 The Three Layers of Feedback"),
+      bullet("Layer 1 \u2014 Execution feedback (every judge has this): Pass / fail per test case, runtime in ms, error type (TLE, MLE, compile error, runtime error)."),
+      bullet("Layer 2 \u2014 Complexity feedback (our differentiator): Static Big-O inference from the submitted AST. No other public judge does this."),
+      bullet("Layer 3 \u2014 Socratic AI hint (our differentiator): Complexity gap fed to Claude. The model is constrained to ask a question, not give the answer."),
+      ...sp(1),
+      h2("0.2 What You Are NOT Building"),
+      p("Scope creep is how interns fail. The following are explicitly out of scope for this internship. Do not build them."),
+      bullet("A leaderboard or ranking system"),
+      bullet("A DP-based personalised learning path scheduler"),
+      bullet("AI-generated test cases (unreliable without human review)"),
+      bullet("Multi-language AST analysis (Python only for v1)"),
+      bullet("A user study or analytics pipeline"),
+      bullet("Social features, comments, or discussion threads"),
+
+      divider(),
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 1 — ENVIRONMENT SETUP
+      // ══════════════════════════════════════════════════════════════════════
+      h1("1. Environment Setup (Day 1)"),
+      p("Do this before anything else. Do not skip any step. If you hit an error, Google it. If you are still stuck after 30 minutes, ping your senior."),
+
+      h2("1.1 Prerequisites \u2014 Install These First"),
+      bullet("Node.js v20 LTS (use nvm: nvm install 20 && nvm use 20)"),
+      bullet("Python 3.11 (use pyenv: pyenv install 3.11.9 && pyenv global 3.11.9)"),
+      bullet("Docker Desktop \u2014 download from docker.com/products/docker-desktop and ensure it is running"),
+      bullet("Git \u2014 configure your name and email: git config --global user.name \"Your Name\""),
+      bullet("VS Code with these extensions: ESLint, Prettier, Python (Microsoft), Pylance, Docker"),
+      bullet("pgAdmin 4 or TablePlus \u2014 for inspecting the PostgreSQL database visually"),
+
+      h2("1.2 Clone and Initialise the Monorepo"),
+      p("Create a new public GitHub repository named algoarena under your personal account. Then run:"),
+      codeBlock([
+        "git clone https://github.com/YOUR_USERNAME/algoarena.git",
+        "cd algoarena",
+        "",
+        "# Create the folder structure exactly as shown",
+        "mkdir -p apps/web apps/api/routers apps/api/services apps/api/models",
+        "mkdir -p packages/complexity-engine/parsers packages/complexity-engine/analyzers",
+        "mkdir -p scripts docker",
+        "",
+        "# Initialise the Python backend",
+        "cd apps/api",
+        "python -m venv venv",
+        "source venv/bin/activate          # Windows: venv\\Scripts\\activate",
+        "pip install fastapi uvicorn sqlalchemy psycopg2-binary redis httpx python-dotenv",
+        "pip install tree-sitter tree-sitter-python alembic pytest",
+        "pip freeze > requirements.txt",
+        "cd ../..",
+        "",
+        "# Initialise the Next.js frontend",
+        "cd apps/web",
+        "npx create-next-app@latest . --typescript --tailwind --eslint --app --no-src-dir",
+        "npm install @monaco-editor/react axios swr next-auth",
+        "cd ../.."
+      ]),
+
+      h2("1.3 Docker Compose \u2014 Infrastructure"),
+      p("Create docker-compose.yml in the project root. This single file starts your entire backend infrastructure. Copy it exactly:"),
+      codeBlock([
+        "# docker-compose.yml",
+        "version: '3.8'",
+        "",
+        "services:",
+        "  judge0-server:",
+        "    image: judge0/judge0:1.13.1",
+        "    ports:",
+        "      - '2358:2358'",
+        "    environment:",
+        "      REDIS_URL: redis://redis:6379",
+        "      POSTGRES_HOST: db",
+        "      POSTGRES_DB: judge0",
+        "      POSTGRES_USER: judge0",
+        "      POSTGRES_PASSWORD: judge0secret",
+        "    depends_on: [db, redis]",
+        "    privileged: true",
+        "",
+        "  judge0-workers:",
+        "    image: judge0/judge0:1.13.1",
+        "    command: ['./scripts/workers']",
+        "    environment:",
+        "      REDIS_URL: redis://redis:6379",
+        "      POSTGRES_HOST: db",
+        "      POSTGRES_DB: judge0",
+        "      POSTGRES_USER: judge0",
+        "      POSTGRES_PASSWORD: judge0secret",
+        "    depends_on: [db, redis]",
+        "    privileged: true",
+        "",
+        "  db:",
+        "    image: postgres:15",
+        "    environment:",
+        "      POSTGRES_USER: algoarena",
+        "      POSTGRES_PASSWORD: localpassword",
+        "      POSTGRES_DB: algoarena",
+        "    ports:",
+        "      - '5432:5432'",
+        "    volumes:",
+        "      - pg_data:/var/lib/postgresql/data",
+        "",
+        "  redis:",
+        "    image: redis:7-alpine",
+        "    ports:",
+        "      - '6379:6379'",
+        "",
+        "volumes:",
+        "  pg_data:",
+      ]),
+      p("Start it with: docker compose up -d"),
+      p("Verify it works: open http://localhost:2358 in your browser. You should see the Judge0 API welcome page."),
+
+      h2("1.4 Environment Variables"),
+      p("Create apps/api/.env (never commit this file):"),
+      codeBlock([
+        "DATABASE_URL=postgresql://algoarena:localpassword@localhost:5432/algoarena",
+        "REDIS_URL=redis://localhost:6379",
+        "JUDGE0_URL=http://localhost:2358",
+        "ANTHROPIC_API_KEY=sk-ant-your-key-here",
+        "JWT_SECRET=a-long-random-string-change-this",
+      ]),
+      p("Create apps/web/.env.local (never commit this file):"),
+      codeBlock([
+        "NEXTAUTH_URL=http://localhost:3000",
+        "NEXTAUTH_SECRET=another-long-random-string",
+        "GITHUB_CLIENT_ID=your-github-oauth-app-id",
+        "GITHUB_CLIENT_SECRET=your-github-oauth-app-secret",
+        "NEXT_PUBLIC_API_URL=http://localhost:8000",
+      ]),
+      callout("How to get GitHub OAuth keys", [
+        "Go to github.com > Settings > Developer Settings > OAuth Apps > New OAuth App.",
+        "Homepage URL: http://localhost:3000   |   Callback URL: http://localhost:3000/api/auth/callback/github",
+        "Copy the Client ID and generate a Client Secret. Paste both into your .env.local.",
+      ], C.bluePale, C.blue, C.blue),
+
+      divider(),
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 2 — DATABASE SCHEMA
+      // ══════════════════════════════════════════════════════════════════════
+      h1("2. Database Schema (Week 1)"),
+      p("All data lives in PostgreSQL. Use SQLAlchemy for the ORM and Alembic for migrations. Create apps/api/models/models.py with the following exact schema. Do not rename columns \u2014 the rest of the codebase depends on these names."),
+
+      h2("2.1 Complete SQLAlchemy Models"),
+      codeBlock([
+        "# apps/api/models/models.py",
+        "from sqlalchemy import Column, String, Integer, Boolean, DateTime, Text, ARRAY",
+        "from sqlalchemy import ForeignKey, Enum as SAEnum",
+        "from sqlalchemy.orm import declarative_base, relationship",
+        "from sqlalchemy.dialects.postgresql import UUID",
+        "from datetime import datetime",
+        "import uuid, enum",
+        "",
+        "Base = declarative_base()",
+        "",
+        "class SubmissionStatus(enum.Enum):",
+        "    PENDING            = 'PENDING'",
+        "    RUNNING            = 'RUNNING'",
+        "    ACCEPTED           = 'ACCEPTED'",
+        "    WRONG_ANSWER       = 'WRONG_ANSWER'",
+        "    TIME_LIMIT         = 'TIME_LIMIT_EXCEEDED'",
+        "    MEMORY_LIMIT       = 'MEMORY_LIMIT_EXCEEDED'",
+        "    RUNTIME_ERROR      = 'RUNTIME_ERROR'",
+        "    COMPILE_ERROR      = 'COMPILE_ERROR'",
+        "    INTERNAL_ERROR     = 'INTERNAL_ERROR'",
+        "",
+        "class BigOClass(enum.Enum):",
+        "    O1     = 'O(1)'",
+        "    ON     = 'O(n)'",
+        "    ONlogN = 'O(n log n)'",
+        "    ON2    = 'O(n^2)'",
+        "    ON3    = 'O(n^3)'",
+        "    O2N    = 'O(2^n)'",
+        "",
+        "class Difficulty(enum.Enum):",
+        "    EASY   = 'easy'",
+        "    MEDIUM = 'medium'",
+        "    HARD   = 'hard'",
+        "",
+        "class User(Base):",
+        "    __tablename__ = 'users'",
+        "    id            = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)",
+        "    email         = Column(String, unique=True, nullable=False)",
+        "    username      = Column(String, unique=True, nullable=False)",
+        "    avatar_url    = Column(String)",
+        "    created_at    = Column(DateTime, default=datetime.utcnow)",
+        "    streak_days   = Column(Integer, default=0)",
+        "    last_active   = Column(DateTime)",
+        "    submissions   = relationship('Submission', back_populates='user')",
+        "    hint_usages   = relationship('HintUsage',  back_populates='user')",
+        "",
+        "class Problem(Base):",
+        "    __tablename__       = 'problems'",
+        "    id                  = Column(Integer, primary_key=True, autoincrement=True)",
+        "    title               = Column(String, nullable=False)",
+        "    slug                = Column(String, unique=True, nullable=False)",
+        "    statement_md        = Column(Text, nullable=False)",
+        "    difficulty          = Column(SAEnum(Difficulty), nullable=False)",
+        "    topic_tags          = Column(ARRAY(String), default=[])",
+        "    optimal_complexity  = Column(SAEnum(BigOClass), nullable=False)",
+        "    editorial_md        = Column(Text)",
+        "    time_limit_ms       = Column(Integer, default=2000)",
+        "    memory_limit_mb     = Column(Integer, default=256)",
+        "    is_published        = Column(Boolean, default=False)",
+        "    test_cases          = relationship('TestCase',   back_populates='problem')",
+        "    submissions         = relationship('Submission', back_populates='problem')",
+        "",
+        "class TestCase(Base):",
+        "    __tablename__ = 'test_cases'",
+        "    id            = Column(Integer, primary_key=True, autoincrement=True)",
+        "    problem_id    = Column(Integer, ForeignKey('problems.id'), nullable=False)",
+        "    input_data    = Column(Text, nullable=False)",
+        "    expected_out  = Column(Text, nullable=False)",
+        "    is_hidden     = Column(Boolean, default=True)",
+        "    display_order = Column(Integer, default=0)",
+        "    problem       = relationship('Problem', back_populates='test_cases')",
+        "",
+        "class Submission(Base):",
+        "    __tablename__       = 'submissions'",
+        "    id                  = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)",
+        "    user_id             = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)",
+        "    problem_id          = Column(Integer, ForeignKey('problems.id'), nullable=False)",
+        "    code                = Column(Text, nullable=False)",
+        "    language            = Column(String, nullable=False)",
+        "    status              = Column(SAEnum(SubmissionStatus), default=SubmissionStatus.PENDING)",
+        "    passed_count        = Column(Integer, default=0)",
+        "    total_count         = Column(Integer, default=0)",
+        "    runtime_ms          = Column(Integer)",
+        "    memory_kb           = Column(Integer)",
+        "    error_message       = Column(Text)",
+        "    failed_input        = Column(Text)",
+        "    expected_output     = Column(Text)",
+        "    actual_output       = Column(Text)",
+        "    judge0_token        = Column(String)",
+        "    user_complexity     = Column(SAEnum(BigOClass))",
+        "    optimal_complexity  = Column(SAEnum(BigOClass))",
+        "    is_optimal          = Column(Boolean)",
+        "    created_at          = Column(DateTime, default=datetime.utcnow)",
+        "    user                = relationship('User',    back_populates='submissions')",
+        "    problem             = relationship('Problem', back_populates='submissions')",
+        "",
+        "class HintUsage(Base):",
+        "    __tablename__ = 'hint_usage'",
+        "    id            = Column(Integer, primary_key=True, autoincrement=True)",
+        "    user_id       = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)",
+        "    problem_id    = Column(Integer, ForeignKey('problems.id'), nullable=False)",
+        "    hint_count    = Column(Integer, default=0)",
+        "    last_hint_at  = Column(DateTime)",
+        "    user          = relationship('User',    back_populates='hint_usages')",
+      ]),
+
+      h2("2.2 Running Migrations"),
+      codeBlock([
+        "cd apps/api",
+        "source venv/bin/activate",
+        "alembic init alembic",
+        "# Edit alembic/env.py: set target_metadata = Base.metadata",
+        "# Edit alembic.ini: set sqlalchemy.url = postgresql://algoarena:localpassword@localhost:5432/algoarena",
+        "alembic revision --autogenerate -m 'initial schema'",
+        "alembic upgrade head",
+        "# Verify: open TablePlus/pgAdmin, connect to localhost:5432, you should see all 5 tables",
+      ]),
+
+      divider(),
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 3 — FASTAPI BACKEND
+      // ══════════════════════════════════════════════════════════════════════
+      h1("3. FastAPI Backend (Weeks 1\u20132)"),
+
+      h2("3.1 Main App Entry Point"),
+      p("Create apps/api/main.py:"),
+      codeBlock([
+        "# apps/api/main.py",
+        "from fastapi import FastAPI",
+        "from fastapi.middleware.cors import CORSMiddleware",
+        "from routers import submissions, problems, users, ai",
+        "from models.database import engine, Base",
+        "",
+        "Base.metadata.create_all(bind=engine)   # safety net, migrations are preferred",
+        "",
+        "app = FastAPI(title='AlgoArena API', version='1.0.0')",
+        "",
+        "app.add_middleware(",
+        "    CORSMiddleware,",
+        "    allow_origins=['http://localhost:3000'],",
+        "    allow_credentials=True,",
+        "    allow_methods=['*'],",
+        "    allow_headers=['*'],",
+        ")",
+        "",
+        "app.include_router(problems.router,    prefix='/problems',    tags=['problems'])",
+        "app.include_router(submissions.router, prefix='/submissions', tags=['submissions'])",
+        "app.include_router(users.router,       prefix='/users',       tags=['users'])",
+        "app.include_router(ai.router,          prefix='/ai',          tags=['ai'])",
+        "",
+        "@app.get('/health')",
+        "def health(): return {'status': 'ok'}",
+        "",
+        "# Run with: uvicorn main:app --reload --port 8000",
+      ]),
+
+      h2("3.2 Database Connection"),
+      codeBlock([
+        "# apps/api/models/database.py",
+        "from sqlalchemy import create_engine",
+        "from sqlalchemy.orm import sessionmaker",
+        "from dotenv import load_dotenv",
+        "import os",
+        "",
+        "load_dotenv()",
+        "DATABASE_URL = os.getenv('DATABASE_URL')",
+        "engine = engine_create = create_engine(DATABASE_URL)",
+        "SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)",
+        "",
+        "def get_db():",
+        "    db = SessionLocal()",
+        "    try:",
+        "        yield db",
+        "    finally:",
+        "        db.close()",
+      ]),
+
+      h2("3.3 Submissions Router \u2014 The Core Flow"),
+      p("This is the most important file in the backend. Read it carefully. Every submission goes through this exact sequence."),
+      codeBlock([
+        "# apps/api/routers/submissions.py",
+        "from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks",
+        "from sqlalchemy.orm import Session",
+        "from models.database import get_db",
+        "from models.models import Submission, Problem, TestCase, SubmissionStatus, BigOClass",
+        "from services.judge import submit_to_judge0, poll_judge0",
+        "from services.complexity import infer_complexity",
+        "from pydantic import BaseModel",
+        "import uuid",
+        "",
+        "router = APIRouter()",
+        "",
+        "class SubmitRequest(BaseModel):",
+        "    problem_id: int",
+        "    code: str",
+        "    language: str   # 'python', 'javascript', 'cpp'",
+        "",
+        "@router.post('/')",
+        "async def create_submission(",
+        "    req: SubmitRequest,",
+        "    background_tasks: BackgroundTasks,",
+        "    db: Session = Depends(get_db),",
+        "):",
+        "    problem = db.query(Problem).filter(Problem.id == req.problem_id).first()",
+        "    if not problem:",
+        "        raise HTTPException(status_code=404, detail='Problem not found')",
+        "",
+        "    # Create PENDING submission record immediately",
+        "    sub = Submission(",
+        "        id=uuid.uuid4(),",
+        "        problem_id=req.problem_id,",
+        "        user_id='00000000-0000-0000-0000-000000000001',  # hardcode until auth is wired",
+        "        code=req.code,",
+        "        language=req.language,",
+        "        status=SubmissionStatus.PENDING,",
+        "        total_count=len(problem.test_cases),",
+        "        optimal_complexity=problem.optimal_complexity,",
+        "    )",
+        "    db.add(sub)",
+        "    db.commit()",
+        "    db.refresh(sub)",
+        "",
+        "    # Run evaluation in background so we can return the submission ID immediately",
+        "    background_tasks.add_task(evaluate_submission, str(sub.id), req.code, req.language, problem, db)",
+        "    return {'submission_id': str(sub.id), 'status': 'PENDING'}",
+        "",
+        "async def evaluate_submission(sub_id, code, language, problem, db):",
+        "    sub = db.query(Submission).filter(Submission.id == sub_id).first()",
+        "    sub.status = SubmissionStatus.RUNNING",
+        "    db.commit()",
+        "",
+        "    test_cases = db.query(TestCase).filter(TestCase.problem_id == problem.id).all()",
+        "    passed = 0",
+        "    failed_input = failed_expected = failed_actual = error_msg = None",
+        "",
+        "    for tc in test_cases:",
+        "        result = await submit_to_judge0(code, language, tc.input_data, problem.time_limit_ms)",
+        "        judge_status = result.get('status', {}).get('id')",
+        "",
+        "        if judge_status == 3:   # Accepted",
+        "            if result.get('stdout', '').strip() == tc.expected_out.strip():",
+        "                passed += 1",
+        "            else:",
+        "                if not failed_input:",
+        "                    failed_input    = tc.input_data",
+        "                    failed_expected = tc.expected_out",
+        "                    failed_actual   = result.get('stdout', '')",
+        "        elif judge_status == 5:   # TLE",
+        "            sub.status = SubmissionStatus.TIME_LIMIT ; break",
+        "        elif judge_status == 6:   # MLE",
+        "            sub.status = SubmissionStatus.MEMORY_LIMIT ; break",
+        "        elif judge_status in [11, 12]:  # Runtime error",
+        "            sub.status    = SubmissionStatus.RUNTIME_ERROR",
+        "            error_msg     = result.get('stderr') or result.get('message', '')",
+        "            break",
+        "        elif judge_status == 6 and result.get('compile_output'):",
+        "            sub.status = SubmissionStatus.COMPILE_ERROR",
+        "            error_msg  = result.get('compile_output', '')",
+        "            break",
+        "        else:",
+        "            sub.status = SubmissionStatus.INTERNAL_ERROR ; break",
+        "",
+        "    # Determine final status if not set by error above",
+        "    if sub.status == SubmissionStatus.RUNNING:",
+        "        sub.status = SubmissionStatus.ACCEPTED if passed == len(test_cases) else SubmissionStatus.WRONG_ANSWER",
+        "",
+        "    # Run complexity engine (Python only)",
+        "    if language == 'python':",
+        "        try:",
+        "            sub.user_complexity = infer_complexity(code)",
+        "            sub.is_optimal      = (sub.user_complexity == sub.optimal_complexity)",
+        "        except Exception:",
+        "            sub.user_complexity = None  # graceful degradation",
+        "",
+        "    sub.passed_count    = passed",
+        "    sub.failed_input    = failed_input",
+        "    sub.expected_output = failed_expected",
+        "    sub.actual_output   = failed_actual",
+        "    sub.error_message   = error_msg",
+        "    db.commit()",
+        "",
+        "@router.get('/{submission_id}')",
+        "def get_submission(submission_id: str, db: Session = Depends(get_db)):",
+        "    sub = db.query(Submission).filter(Submission.id == submission_id).first()",
+        "    if not sub:",
+        "        raise HTTPException(status_code=404, detail='Submission not found')",
+        "    return {",
+        "        'id':               str(sub.id),",
+        "        'status':           sub.status.value,",
+        "        'passed_count':     sub.passed_count,",
+        "        'total_count':      sub.total_count,",
+        "        'runtime_ms':       sub.runtime_ms,",
+        "        'error_message':    sub.error_message,",
+        "        'failed_input':     sub.failed_input,",
+        "        'expected_output':  sub.expected_output,",
+        "        'actual_output':    sub.actual_output,",
+        "        'user_complexity':  sub.user_complexity.value if sub.user_complexity else None,",
+        "        'optimal_complexity': sub.optimal_complexity.value if sub.optimal_complexity else None,",
+        "        'is_optimal':       sub.is_optimal,",
+        "    }",
+      ]),
+
+      h2("3.4 Judge0 Client Service"),
+      codeBlock([
+        "# apps/api/services/judge.py",
+        "import httpx, asyncio, os, base64",
+        "",
+        "JUDGE0_URL = os.getenv('JUDGE0_URL', 'http://localhost:2358')",
+        "",
+        "# Judge0 language IDs",
+        "LANGUAGE_IDS = {",
+        "    'python':     71,   # Python 3.8",
+        "    'javascript': 63,   # Node.js 12",
+        "    'cpp':        54,   # C++ 17",
+        "}",
+        "",
+        "async def submit_to_judge0(code: str, language: str, stdin: str, time_limit_ms: int):",
+        "    lang_id = LANGUAGE_IDS.get(language, 71)",
+        "    payload = {",
+        "        'source_code':   base64.b64encode(code.encode()).decode(),",
+        "        'language_id':   lang_id,",
+        "        'stdin':         base64.b64encode(stdin.encode()).decode(),",
+        "        'cpu_time_limit': time_limit_ms / 1000,",
+        "        'encode_source': True,",
+        "        'encode_stdin':  True,",
+        "    }",
+        "    async with httpx.AsyncClient() as client:",
+        "        resp = await client.post(f'{JUDGE0_URL}/submissions?wait=true', json=payload, timeout=30)",
+        "        resp.raise_for_status()",
+        "        data = resp.json()",
+        "        # Decode base64 outputs",
+        "        for field in ['stdout', 'stderr', 'compile_output']:",
+        "            if data.get(field):",
+        "                data[field] = base64.b64decode(data[field]).decode(errors='replace')",
+        "        return data",
+      ]),
+
+      divider(),
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 4 — COMPLEXITY ENGINE
+      // ══════════════════════════════════════════════════════════════════════
+      h1("4. Complexity Engine (Week 5)"),
+      p("This is the hardest part of the project and the most important. Read the entire section before writing any code."),
+      callout("Philosophy", [
+        "We are inferring Big-O from code structure, not measuring runtime. This is static analysis. A nested for loop is O(n^2) regardless of whether it runs in 1ms or 10s.",
+        "We only support Python in v1. We only recognise common patterns. We gracefully degrade when we cannot determine the complexity (user_complexity stays null). This is documented behaviour, not a bug.",
+      ], C.purpleLight, C.purple, C.purple),
+
+      h2("4.1 How Tree-sitter Works"),
+      p("Tree-sitter is a parser library. You give it source code, it gives you an Abstract Syntax Tree (AST). An AST is a tree where each node represents a syntactic construct: a function definition, a for loop, a function call, etc. You walk this tree to detect patterns."),
+      p("Install the Python grammar:"),
+      codeBlock([
+        "pip install tree-sitter tree-sitter-python",
+        "",
+        "# Quick test to make sure it works:",
+        "python3 -c \"",
+        "from tree_sitter import Language, Parser",
+        "import tree_sitter_python as tspython",
+        "PY_LANGUAGE = Language(tspython.language())",
+        "parser = Parser(PY_LANGUAGE)",
+        "tree = parser.parse(b'for i in range(n): pass')",
+        "print(tree.root_node.sexp())   # Should print the AST",
+        "\"",
+      ]),
+
+      h2("4.2 The Inference Rules"),
+      p("These are the exact rules your engine must implement. They are applied in order of precedence (highest to lowest):"),
+      simpleTable(
+        ["Priority", "Pattern Detected", "Inferred Complexity"],
+        [
+          ["1 (highest)", "A loop nested 3+ levels deep (for inside for inside for)", "O(n^3)"],
+          ["2", "A recursive function with 2 recursive calls (no @lru_cache)", "O(2^n)"],
+          ["3", "A loop nested exactly 2 levels deep (for inside for)", "O(n^2)"],
+          ["4", "A call to sorted() or .sort() inside no loop", "O(n log n)"],
+          ["5", "A single for or while loop (no nesting, no recursion)", "O(n)"],
+          ["6", "A recursive function with @lru_cache decorator", "O(n)"],
+          ["7 (fallback)", "No loops, no recursion detected", "O(1)"],
+        ],
+        [1000, 5200, 3160]
+      ),
+      ...sp(1),
+
+      h2("4.3 Implementation"),
+      codeBlock([
+        "# apps/api/services/complexity.py",
+        "from tree_sitter import Language, Parser, Node",
+        "import tree_sitter_python as tspython",
+        "from models.models import BigOClass",
+        "",
+        "PY_LANGUAGE = Language(tspython.language())",
+        "_parser = Parser(PY_LANGUAGE)",
+        "",
+        "def infer_complexity(code: str) -> BigOClass:",
+        "    tree = _parser.parse(code.encode())",
+        "    root = tree.root_node",
+        "    max_loop_depth = _max_loop_depth(root, 0)",
+        "    has_recursion, has_memo, branch_count = _check_recursion(root)",
+        "    has_sort = _has_sort_call(root)",
+        "",
+        "    if max_loop_depth >= 3:                          return BigOClass.ON3",
+        "    if has_recursion and not has_memo and branch_count >= 2: return BigOClass.O2N",
+        "    if max_loop_depth == 2:                          return BigOClass.ON2",
+        "    if has_sort and max_loop_depth == 0:             return BigOClass.ONlogN",
+        "    if max_loop_depth == 1 or (has_recursion and has_memo): return BigOClass.ON",
+        "    return BigOClass.O1",
+        "",
+        "def _max_loop_depth(node: Node, current_depth: int) -> int:",
+        "    \"\"\"Recursively walk the AST counting max nested loop depth.\"\"\"",
+        "    if node.type in ('for_statement', 'while_statement'):",
+        "        current_depth += 1",
+        "    max_depth = current_depth",
+        "    for child in node.children:",
+        "        max_depth = max(max_depth, _max_loop_depth(child, current_depth))",
+        "    return max_depth",
+        "",
+        "def _check_recursion(root: Node):",
+        "    \"\"\"",
+        "    Returns (has_recursion, has_lru_cache, branch_count).",
+        "    has_recursion: True if any function calls itself.",
+        "    has_lru_cache: True if any function is decorated with @lru_cache or @cache.",
+        "    branch_count: max number of recursive calls in one function body.",
+        "    \"\"\"",
+        "    results = []",
+        "    _walk_functions(root, results)",
+        "    if not results:",
+        "        return False, False, 0",
+        "    has_rec   = any(r[0] for r in results)",
+        "    has_memo  = any(r[1] for r in results)",
+        "    max_calls = max(r[2] for r in results)",
+        "    return has_rec, has_memo, max_calls",
+        "",
+        "def _walk_functions(node: Node, results: list):",
+        "    if node.type == 'function_definition':",
+        "        fn_name = next((c.text.decode() for c in node.children if c.type == 'identifier'), None)",
+        "        decorators = [c for c in node.children if c.type == 'decorator']",
+        "        decorator_names = [d.text.decode() for d in decorators]",
+        "        has_memo = any('lru_cache' in d or '@cache' in d for d in decorator_names)",
+        "        recursive_calls = _count_recursive_calls(node, fn_name)",
+        "        results.append((recursive_calls > 0, has_memo, recursive_calls))",
+        "    for child in node.children:",
+        "        _walk_functions(child, results)",
+        "",
+        "def _count_recursive_calls(fn_node: Node, fn_name: str) -> int:",
+        "    count = 0",
+        "    if fn_node.type == 'call':",
+        "        func = fn_node.child_by_field_name('function')",
+        "        if func and func.text.decode() == fn_name:",
+        "            count += 1",
+        "    for child in fn_node.children:",
+        "        count += _count_recursive_calls(child, fn_name)",
+        "    return count",
+        "",
+        "def _has_sort_call(root: Node) -> bool:",
+        "    if root.type == 'call':",
+        "        func = root.child_by_field_name('function')",
+        "        if func:",
+        "            text = func.text.decode()",
+        "            if text == 'sorted' or text.endswith('.sort'):",
+        "                return True",
+        "    return any(_has_sort_call(c) for c in root.children)",
+      ]),
+
+      h2("4.4 Unit Tests for the Complexity Engine"),
+      p("Write these tests in apps/api/tests/test_complexity.py. All must pass before you wire the engine into the submission pipeline."),
+      codeBlock([
+        "# apps/api/tests/test_complexity.py",
+        "from services.complexity import infer_complexity",
+        "from models.models import BigOClass",
+        "",
+        "def test_single_loop():          assert infer_complexity('for i in range(n): pass') == BigOClass.ON",
+        "def test_nested_loop():          assert infer_complexity('for i in r(n):\\n for j in r(n): pass') == BigOClass.ON2",
+        "def test_triple_loop():          assert infer_complexity('for i in r(n):\\n for j in r(n):\\n  for k in r(n): pass') == BigOClass.ON3",
+        "def test_sorted_no_loop():       assert infer_complexity('x = sorted(arr)') == BigOClass.ONlogN",
+        "def test_constant():             assert infer_complexity('x = a + b') == BigOClass.O1",
+        "",
+        "FIBO_NO_MEMO = '''",
+        "def fib(n):",
+        "    if n <= 1: return n",
+        "    return fib(n-1) + fib(n-2)",
+        "'''",
+        "def test_binary_recursion():     assert infer_complexity(FIBO_NO_MEMO) == BigOClass.O2N",
+        "",
+        "FIBO_MEMO = '''",
+        "from functools import lru_cache",
+        "@lru_cache(maxsize=None)",
+        "def fib(n):",
+        "    if n <= 1: return n",
+        "    return fib(n-1) + fib(n-2)",
+        "'''",
+        "def test_memoized_recursion():   assert infer_complexity(FIBO_MEMO) == BigOClass.ON",
+        "",
+        "# Run: cd apps/api && pytest tests/test_complexity.py -v",
+      ]),
+
+      divider(),
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 5 — AI TUTOR
+      // ══════════════════════════════════════════════════════════════════════
+      h1("5. AI Tutor (Week 6)"),
+      p("The AI tutor is triggered after evaluation completes. It streams a response using Server-Sent Events (SSE). The prompt is the core intellectual contribution of this project \u2014 do not modify it without approval."),
+
+      h2("5.1 The Prompt"),
+      callout("IMPORTANT", [
+        "The prompt has two hard constraints: (1) it must NEVER name the optimal algorithm or data structure. (2) it must NEVER produce code or pseudocode. These constraints make it Socratic. Violating them turns the hint into a spoiler.",
+      ], C.redLight, C.red, C.red),
+      ...sp(1),
+      codeBlock([
+        "# apps/api/services/ai_tutor.py",
+        "import anthropic, os",
+        "from typing import AsyncIterator",
+        "",
+        "client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))",
+        "",
+        "SYSTEM_PROMPT = \"\"\"You are an expert algorithms tutor at a top CS university.",
+        "You give terse, precise, Socratic feedback. Your job is to ask the question that",
+        "leads the student to the insight, not to give them the insight directly.",
+        "",
+        "ABSOLUTE RULES (never break these):",
+        "- Never name the optimal algorithm, data structure, or technique.",
+        "- Never write code, pseudocode, or step-by-step instructions.",
+        "- Never confirm or deny if the student guesses the algorithm.",
+        "- Keep your entire response under 150 words.",
+        "- Be direct. Do not be encouraging or use filler words like 'Great question!'",
+        "\"\"\"",
+        "",
+        "USER_TEMPLATE = \"\"\"",
+        "PROBLEM:",
+        "{problem_statement}",
+        "",
+        "STUDENT CODE ({language}):",
+        "{user_code}",
+        "",
+        "ANALYSIS:",
+        "- Their complexity : {user_complexity}",
+        "- Optimal complexity: {optimal_complexity}",
+        "- Test cases passed : {passed}/{total}",
+        "{failed_section}",
+        "",
+        "TASK:",
+        "1. In one sentence, identify what approach the student used.",
+        "2. Explain WHY their code has {user_complexity} complexity. Trace their specific code,",
+        "   not a generic example. Reference actual variable names and line patterns.",
+        "3. Ask ONE Socratic question that points toward the insight they are missing.",
+        "   Do NOT give the answer. Do NOT name the optimal algorithm.",
+        "4. If all tests passed but complexity is suboptimal: add one sentence about what",
+        "   a follow-up interviewer would ask about scalability at 10^7 input size.",
+        "\"\"\"",
+        "",
+        "def build_hint_context(sub, problem_statement) -> str:",
+        "    failed = ''",
+        "    if sub.failed_input:",
+        "        failed = f'- Failed test: input={sub.failed_input} expected={sub.expected_output} got={sub.actual_output}'",
+        "    return USER_TEMPLATE.format(",
+        "        problem_statement = problem_statement,",
+        "        language          = sub.language,",
+        "        user_code         = sub.code,",
+        "        user_complexity   = sub.user_complexity.value if sub.user_complexity else 'unknown',",
+        "        optimal_complexity= sub.optimal_complexity.value if sub.optimal_complexity else 'unknown',",
+        "        passed            = sub.passed_count,",
+        "        total             = sub.total_count,",
+        "        failed_section    = failed,",
+        "    )",
+        "",
+        "def stream_hint(sub, problem_statement) -> anthropic.Stream:",
+        "    user_msg = build_hint_context(sub, problem_statement)",
+        "    return client.messages.stream(",
+        "        model      = 'claude-haiku-4-5',",
+        "        max_tokens = 400,",
+        "        system     = SYSTEM_PROMPT,",
+        "        messages   = [{'role': 'user', 'content': user_msg}],",
+        "    )",
+      ]),
+
+      h2("5.2 AI Router with Rate Limiting"),
+      codeBlock([
+        "# apps/api/routers/ai.py",
+        "from fastapi import APIRouter, Depends, HTTPException",
+        "from fastapi.responses import StreamingResponse",
+        "from sqlalchemy.orm import Session",
+        "from models.database import get_db",
+        "from models.models import Submission, Problem, HintUsage, SubmissionStatus",
+        "from services.ai_tutor import stream_hint",
+        "from datetime import datetime",
+        "",
+        "router     = APIRouter()",
+        "MAX_HINTS  = 3   # Hard cap per user per problem",
+        "",
+        "@router.get('/hint/{submission_id}')",
+        "def get_hint(submission_id: str, db: Session = Depends(get_db)):",
+        "    sub = db.query(Submission).filter(Submission.id == submission_id).first()",
+        "    if not sub:",
+        "        raise HTTPException(status_code=404, detail='Submission not found')",
+        "",
+        "    # Skip hint if already optimal",
+        "    if sub.is_optimal and sub.status == SubmissionStatus.ACCEPTED:",
+        "        return {'skip': True, 'message': 'Solution is already optimal!'}",
+        "",
+        "    # Check rate limit",
+        "    usage = db.query(HintUsage).filter_by(user_id=sub.user_id, problem_id=sub.problem_id).first()",
+        "    if not usage:",
+        "        usage = HintUsage(user_id=sub.user_id, problem_id=sub.problem_id, hint_count=0)",
+        "        db.add(usage)",
+        "    if usage.hint_count >= MAX_HINTS:",
+        "        raise HTTPException(status_code=429, detail=f'Hint limit ({MAX_HINTS}) reached for this problem')",
+        "",
+        "    # Increment usage",
+        "    usage.hint_count  += 1",
+        "    usage.last_hint_at = datetime.utcnow()",
+        "    db.commit()",
+        "",
+        "    problem = db.query(Problem).filter(Problem.id == sub.problem_id).first()",
+        "",
+        "    def generate():",
+        "        with stream_hint(sub, problem.statement_md) as stream:",
+        "            for text in stream.text_stream:",
+        "                yield f'data: {text}\\n\\n'",
+        "        yield 'data: [DONE]\\n\\n'",
+        "",
+        "    return StreamingResponse(generate(), media_type='text/event-stream')",
+      ]),
+
+      divider(),
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 6 — NEXT.JS FRONTEND
+      // ══════════════════════════════════════════════════════════════════════
+      h1("6. Next.js Frontend (Weeks 3\u20134)"),
+
+      h2("6.1 Folder Structure"),
+      codeBlock([
+        "apps/web/",
+        "  app/",
+        "    page.tsx                     # Homepage / problem list",
+        "    problems/",
+        "      page.tsx                   # Full problem list with filters",
+        "      [slug]/",
+        "        page.tsx                 # Problem detail + editor",
+        "    dashboard/",
+        "      page.tsx                   # User progress, heatmap",
+        "    api/",
+        "      auth/[...nextauth]/route.ts  # NextAuth handler",
+        "      submissions/",
+        "        route.ts                 # POST: create submission",
+        "        [id]/route.ts            # GET: poll submission",
+        "      hints/",
+        "        [id]/route.ts            # GET: SSE stream hint",
+        "  components/",
+        "    Editor.tsx                   # Monaco editor wrapper",
+        "    ResultPanel.tsx              # Pass/fail display with error states",
+        "    AiTutorPanel.tsx             # Streaming hint display",
+        "    ProblemCard.tsx              # Card on the list page",
+        "    TopicHeatmap.tsx             # Dashboard heatmap",
+        "  lib/",
+        "    api.ts                       # Typed API client functions",
+        "    auth.ts                      # NextAuth config",
+      ]),
+
+      h2("6.2 Monaco Editor Component"),
+      codeBlock([
+        "// apps/web/components/Editor.tsx",
+        "'use client';",
+        "import Editor from '@monaco-editor/react';",
+        "import { useState } from 'react';",
+        "",
+        "interface EditorProps {",
+        "  problemId: number;",
+        "  onResult: (result: SubmissionResult) => void;",
+        "}",
+        "",
+        "export default function CodeEditor({ problemId, onResult }: EditorProps) {",
+        "  const [code, setCode]         = useState(DEFAULT_PYTHON_STUB);",
+        "  const [language, setLanguage] = useState<'python' | 'javascript' | 'cpp'>('python');",
+        "  const [loading, setLoading]   = useState(false);",
+        "",
+        "  const submit = async () => {",
+        "    setLoading(true);",
+        "    try {",
+        "      // Step 1: Create submission",
+        "      const res  = await fetch('/api/submissions', {",
+        "        method:  'POST',",
+        "        headers: { 'Content-Type': 'application/json' },",
+        "        body:    JSON.stringify({ problem_id: problemId, code, language }),",
+        "      });",
+        "      const { submission_id } = await res.json();",
+        "",
+        "      // Step 2: Poll until status is no longer PENDING or RUNNING",
+        "      let result;",
+        "      while (true) {",
+        "        await new Promise(r => setTimeout(r, 1500));  // wait 1.5s",
+        "        const poll = await fetch(`/api/submissions/${submission_id}`);",
+        "        result     = await poll.json();",
+        "        if (!['PENDING', 'RUNNING'].includes(result.status)) break;",
+        "      }",
+        "      onResult(result);",
+        "    } finally {",
+        "      setLoading(false);",
+        "    }",
+        "  };",
+        "",
+        "  return (",
+        "    <div className='flex flex-col h-full'>",
+        "      <div className='flex gap-2 p-2 bg-gray-900 border-b border-gray-700'>",
+        "        <select value={language} onChange={e => setLanguage(e.target.value as any)}",
+        "          className='bg-gray-800 text-white rounded px-2 py-1 text-sm'>",
+        "          <option value='python'>Python 3</option>",
+        "          <option value='javascript'>JavaScript</option>",
+        "          <option value='cpp'>C++ 17</option>",
+        "        </select>",
+        "        <button onClick={submit} disabled={loading}",
+        "          className='ml-auto bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded text-sm font-medium disabled:opacity-50'>",
+        "          {loading ? 'Running...' : 'Submit'}",
+        "        </button>",
+        "      </div>",
+        "      <Editor",
+        "        height='100%'",
+        "        language={language}",
+        "        value={code}",
+        "        onChange={v => setCode(v ?? '')}",
+        "        theme='vs-dark'",
+        "        options={{ minimap: { enabled: false }, fontSize: 14, tabSize: 4 }}",
+        "      />",
+        "    </div>",
+        "  );",
+        "}",
+        "",
+        "const DEFAULT_PYTHON_STUB = `def solution(nums: list[int]) -> int:",
+        "    # Write your solution here",
+        "    pass",
+        "`;",
+      ]),
+
+      h2("6.3 Result Panel \u2014 All Error States"),
+      p("This component is responsible for rendering every possible outcome. Each status must have a distinct, informative UI. Build it as a switch statement over the status field."),
+      codeBlock([
+        "// apps/web/components/ResultPanel.tsx",
+        "'use client';",
+        "",
+        "interface ResultPanelProps { result: SubmissionResult | null }",
+        "",
+        "export default function ResultPanel({ result }: ResultPanelProps) {",
+        "  if (!result) return null;",
+        "",
+        "  const statusConfig: Record<string, { label: string; color: string; icon: string }> = {",
+        "    ACCEPTED:              { label: 'Accepted',            color: 'green',  icon: '\u2713' },",
+        "    WRONG_ANSWER:          { label: 'Wrong Answer',        color: 'red',    icon: '\u2717' },",
+        "    TIME_LIMIT_EXCEEDED:   { label: 'Time Limit Exceeded', color: 'yellow', icon: '\u23F1' },",
+        "    MEMORY_LIMIT_EXCEEDED: { label: 'Memory Limit Exceeded', color: 'yellow', icon: '\u25A0' },",
+        "    RUNTIME_ERROR:         { label: 'Runtime Error',       color: 'red',    icon: '\u26A0' },",
+        "    COMPILE_ERROR:         { label: 'Compile Error',       color: 'orange', icon: '\u26A0' },",
+        "    INTERNAL_ERROR:        { label: 'Internal Error',      color: 'gray',   icon: '?' },",
+        "  };",
+        "",
+        "  const cfg = statusConfig[result.status] ?? statusConfig.INTERNAL_ERROR;",
+        "",
+        "  return (",
+        "    <div className='p-4 space-y-3'>",
+        "      {/* Status badge */}",
+        "      <div className={`flex items-center gap-2 text-${cfg.color}-400 font-semibold`}>",
+        "        <span>{cfg.icon}</span>",
+        "        <span>{cfg.label}</span>",
+        "        <span className='text-gray-400 font-normal text-sm ml-auto'>",
+        "          {result.passed_count}/{result.total_count} tests",
+        "        </span>",
+        "      </div>",
+        "",
+        "      {/* Wrong Answer details */}",
+        "      {result.status === 'WRONG_ANSWER' && result.failed_input && (",
+        "        <div className='bg-gray-800 rounded p-3 text-sm font-mono space-y-1'>",
+        "          <div><span className='text-gray-400'>Input:    </span>{result.failed_input}</div>",
+        "          <div><span className='text-gray-400'>Expected: </span>{result.expected_output}</div>",
+        "          <div><span className='text-green-400'>Got:      </span>{result.actual_output}</div>",
+        "        </div>",
+        "      )}",
+        "",
+        "      {/* Error message (TLE, MLE, runtime, compile) */}",
+        "      {result.error_message && (",
+        "        <pre className='bg-gray-900 text-red-300 rounded p-3 text-xs overflow-x-auto max-h-40'>",
+        "          {result.error_message.slice(0, 800)}",
+        "        </pre>",
+        "      )}",
+        "",
+        "      {/* Complexity badge */}",
+        "      {result.user_complexity && (",
+        "        <div className='flex gap-3 text-sm'>",
+        "          <span className='text-gray-400'>Your complexity:</span>",
+        "          <span className={result.is_optimal ? 'text-green-400' : 'text-yellow-400'}>",
+        "            {result.user_complexity}",
+        "          </span>",
+        "          {!result.is_optimal && (",
+        "            <span className='text-gray-400'>(optimal: {result.optimal_complexity})</span>",
+        "          )}",
+        "        </div>",
+        "      )}",
+        "    </div>",
+        "  );",
+        "}",
+      ]),
+
+      h2("6.4 AI Tutor Panel \u2014 SSE Streaming"),
+      codeBlock([
+        "// apps/web/components/AiTutorPanel.tsx",
+        "'use client';",
+        "import { useState, useEffect, useRef } from 'react';",
+        "",
+        "interface AiTutorPanelProps {",
+        "  submissionId: string | null;",
+        "  isOptimal: boolean;",
+        "  hintsUsed: number;",
+        "}",
+        "",
+        "const MAX_HINTS = 3;",
+        "",
+        "export default function AiTutorPanel({ submissionId, isOptimal, hintsUsed }: AiTutorPanelProps) {",
+        "  const [hint, setHint]       = useState('');",
+        "  const [loading, setLoading] = useState(false);",
+        "  const [used, setUsed]       = useState(hintsUsed);",
+        "  const abortRef              = useRef<AbortController | null>(null);",
+        "",
+        "  const fetchHint = async () => {",
+        "    if (!submissionId || used >= MAX_HINTS) return;",
+        "    setLoading(true);",
+        "    setHint('');",
+        "    abortRef.current = new AbortController();",
+        "    try {",
+        "      const res = await fetch(`/api/hints/${submissionId}`, { signal: abortRef.current.signal });",
+        "      if (!res.ok || !res.body) { setHint('Could not load hint.'); return; }",
+        "      const reader  = res.body.getReader();",
+        "      const decoder = new TextDecoder();",
+        "      while (true) {",
+        "        const { value, done } = await reader.read();",
+        "        if (done) break;",
+        "        const chunk = decoder.decode(value);",
+        "        // SSE format: 'data: text\\n\\n'",
+        "        const lines = chunk.split('\\n');",
+        "        for (const line of lines) {",
+        "          if (line.startsWith('data: ')) {",
+        "            const text = line.slice(6);",
+        "            if (text === '[DONE]') break;",
+        "            setHint(prev => prev + text);",
+        "          }",
+        "        }",
+        "      }",
+        "      setUsed(prev => prev + 1);",
+        "    } catch (e) {",
+        "      if ((e as Error).name !== 'AbortError') setHint('Error loading hint.');",
+        "    } finally {",
+        "      setLoading(false);",
+        "    }",
+        "  };",
+        "",
+        "  if (isOptimal) return (",
+        "    <div className='p-4 text-green-400 text-sm'>",
+        "      Optimal solution! Check the editorial for alternative approaches.",
+        "    </div>",
+        "  );",
+        "",
+        "  return (",
+        "    <div className='p-4 space-y-3'>",
+        "      <div className='flex items-center justify-between'>",
+        "        <span className='text-sm font-medium text-gray-300'>AI Tutor</span>",
+        "        <span className='text-xs text-gray-500'>{used}/{MAX_HINTS} hints used</span>",
+        "      </div>",
+        "      {hint && (",
+        "        <div className='text-sm text-gray-200 leading-relaxed whitespace-pre-wrap'>{hint}</div>",
+        "      )}",
+        "      <button",
+        "        onClick={fetchHint}",
+        "        disabled={loading || used >= MAX_HINTS}",
+        "        className='text-sm px-3 py-1.5 rounded border border-blue-600 text-blue-400 hover:bg-blue-900/30 disabled:opacity-40'",
+        "      >",
+        "        {loading ? 'Thinking...' : used >= MAX_HINTS ? 'Hint limit reached' : 'Get a hint'}",
+        "      </button>",
+        "    </div>",
+        "  );",
+        "}",
+      ]),
+
+      divider(),
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 7 — AUTHENTICATION
+      // ══════════════════════════════════════════════════════════════════════
+      h1("7. Authentication (Week 4)"),
+      p("Use NextAuth.js with the GitHub provider. This gives you production-grade OAuth without building it from scratch."),
+
+      h2("7.1 NextAuth Configuration"),
+      codeBlock([
+        "// apps/web/lib/auth.ts",
+        "import NextAuth from 'next-auth';",
+        "import GitHub from 'next-auth/providers/github';",
+        "",
+        "export const { handlers, auth, signIn, signOut } = NextAuth({",
+        "  providers: [",
+        "    GitHub({",
+        "      clientId:     process.env.GITHUB_CLIENT_ID!,",
+        "      clientSecret: process.env.GITHUB_CLIENT_SECRET!,",
+        "    }),",
+        "  ],",
+        "  callbacks: {",
+        "    async session({ session, token }) {",
+        "      // Attach user ID to session so backend can identify requests",
+        "      session.user.id = token.sub!;",
+        "      return session;",
+        "    },",
+        "  },",
+        "});",
+        "",
+        "// apps/web/app/api/auth/[...nextauth]/route.ts",
+        "import { handlers } from '@/lib/auth';",
+        "export const { GET, POST } = handlers;",
+      ]),
+
+      h2("7.2 Protecting Routes"),
+      codeBlock([
+        "// In any page that requires auth, add at the top:",
+        "import { auth } from '@/lib/auth';",
+        "import { redirect } from 'next/navigation';",
+        "",
+        "export default async function DashboardPage() {",
+        "  const session = await auth();",
+        "  if (!session) redirect('/');  // Unauthenticated users go to homepage",
+        "  return <Dashboard userId={session.user.id} />;",
+        "}",
+      ]),
+
+      divider(),
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 8 — PROBLEM SET & SEED SCRIPT
+      // ══════════════════════════════════════════════════════════════════════
+      h1("8. Problem Set \u2014 30 Problems (Week 4)"),
+      p("You need exactly 30 problems seeded into the database. Do not make up problems. Use the list below as your source. Each problem must have at least 10 hidden test cases."),
+
+      h2("8.1 Problem Distribution"),
+      simpleTable(
+        ["#", "Slug", "Title", "Topic", "Difficulty", "Optimal Complexity"],
+        [
+          ["1",  "two-sum",                    "Two Sum",                    "Hash maps",        "Easy",   "O(n)"],
+          ["2",  "best-time-buy-sell",          "Best Time to Buy and Sell",  "Arrays",           "Easy",   "O(n)"],
+          ["3",  "valid-parentheses",           "Valid Parentheses",          "Stacks",           "Easy",   "O(n)"],
+          ["4",  "merge-sorted-lists",          "Merge Two Sorted Lists",     "Linked lists",     "Easy",   "O(n)"],
+          ["5",  "maximum-subarray",            "Maximum Subarray",           "Arrays",           "Easy",   "O(n)"],
+          ["6",  "climbing-stairs",             "Climbing Stairs",            "DP",               "Easy",   "O(n)"],
+          ["7",  "palindrome-number",           "Palindrome Number",          "Math",             "Easy",   "O(log n)"],
+          ["8",  "reverse-linked-list",         "Reverse Linked List",        "Linked lists",     "Easy",   "O(n)"],
+          ["9",  "contains-duplicate",          "Contains Duplicate",         "Hash sets",        "Easy",   "O(n)"],
+          ["10", "valid-anagram",               "Valid Anagram",              "Hash maps",        "Easy",   "O(n)"],
+          ["11", "3sum",                        "3Sum",                       "Arrays",           "Medium", "O(n^2)"],
+          ["12", "longest-substring",           "Longest Substring No Repeat","Sliding window",   "Medium", "O(n)"],
+          ["13", "container-most-water",        "Container With Most Water",  "Two pointers",     "Medium", "O(n)"],
+          ["14", "group-anagrams",              "Group Anagrams",             "Hash maps",        "Medium", "O(n)"],
+          ["15", "top-k-frequent",              "Top K Frequent Elements",    "Hash maps",        "Medium", "O(n)"],
+          ["16", "product-except-self",         "Product of Array Except Self","Arrays",          "Medium", "O(n)"],
+          ["17", "coin-change",                 "Coin Change",                "DP",               "Medium", "O(n^2)"],
+          ["18", "number-of-islands",           "Number of Islands",          "Graphs/BFS",       "Medium", "O(n)"],
+          ["19", "binary-search",               "Binary Search",              "Binary search",    "Easy",   "O(log n)"],
+          ["20", "find-min-rotated",            "Find Min in Rotated Array",  "Binary search",    "Medium", "O(log n)"],
+          ["21", "search-rotated",              "Search in Rotated Array",    "Binary search",    "Medium", "O(log n)"],
+          ["22", "level-order-traversal",       "Binary Tree Level Order",    "Trees/BFS",        "Medium", "O(n)"],
+          ["23", "max-depth-tree",              "Max Depth of Binary Tree",   "Trees/DFS",        "Easy",   "O(n)"],
+          ["24", "validate-bst",                "Validate Binary Search Tree","Trees",            "Medium", "O(n)"],
+          ["25", "lowest-common-ancestor",      "Lowest Common Ancestor",     "Trees",            "Medium", "O(n)"],
+          ["26", "word-search",                 "Word Search",                "Graphs/DFS",       "Medium", "O(n)"],
+          ["27", "course-schedule",             "Course Schedule",            "Graphs/Topo",      "Medium", "O(V+E)"],
+          ["28", "trapping-rain-water",         "Trapping Rain Water",        "Two pointers",     "Hard",   "O(n)"],
+          ["29", "median-two-arrays",           "Median of Two Sorted Arrays","Binary search",    "Hard",   "O(log n)"],
+          ["30", "longest-increasing-subseq",   "Longest Increasing Subseq.", "DP",               "Medium", "O(n^2)"],
+        ],
+        [400, 2000, 2200, 1600, 1000, 2160]
+      ),
+
+      h2("8.2 Seed Script Structure"),
+      codeBlock([
+        "# scripts/seed_problems.py",
+        "# Each problem is a dict with these exact keys.",
+        "# See the sample below for Problem 1 \u2014 follow this pattern for all 30.",
+        "",
+        "PROBLEMS = [",
+        "  {",
+        "    'title':             'Two Sum',",
+        "    'slug':              'two-sum',",
+        "    'difficulty':        'easy',",
+        "    'topic_tags':        ['hash-maps', 'arrays'],",
+        "    'optimal_complexity': 'O(n)',",
+        "    'time_limit_ms':     2000,",
+        "    'memory_limit_mb':   256,",
+        "    'statement_md':      '''## Two Sum",
+        "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`.",
+        "You may assume that each input would have exactly one solution, and you may not use the same element twice.",
+        "",
+        "**Example 1**",
+        "Input: nums = [2,7,11,15], target = 9",
+        "Output: [0,1]",
+        "",
+        "**Constraints**",
+        "- 2 <= nums.length <= 10^4",
+        "- -10^9 <= nums[i] <= 10^9",
+        "''',",
+        "    'editorial_md':      '''## Approach: Hash Map",
+        "Use a hash map to store each number and its index. For each number, check if (target - number) is already in the map. This gives O(n) time and O(n) space.",
+        "A naive nested loop is O(n^2). The interviewer will always ask you to optimise from there.",
+        "''',",
+        "    'test_cases': [",
+        "      {'input': '[2,7,11,15]\\n9',  'expected': '[0,1]',  'hidden': False},",
+        "      {'input': '[3,2,4]\\n6',       'expected': '[1,2]',  'hidden': False},",
+        "      {'input': '[3,3]\\n6',         'expected': '[0,1]',  'hidden': True},",
+        "      {'input': '[1,2,3,4,5]\\n9',   'expected': '[3,4]',  'hidden': True},",
+        "      # Add at least 6 more hidden test cases with edge cases:",
+        "      # negative numbers, large arrays, target at beginning, etc.",
+        "    ],",
+        "  },",
+        "  # ... repeat for all 30 problems",
+        "]",
+        "",
+        "if __name__ == '__main__':",
+        "    from apps.api.models.database import SessionLocal",
+        "    from apps.api.models.models  import Problem, TestCase, Difficulty, BigOClass",
+        "    db = SessionLocal()",
+        "    for data in PROBLEMS:",
+        "        problem = Problem(",
+        "            title              = data['title'],",
+        "            slug               = data['slug'],",
+        "            statement_md       = data['statement_md'],",
+        "            difficulty         = Difficulty(data['difficulty']),",
+        "            topic_tags         = data['topic_tags'],",
+        "            optimal_complexity = BigOClass(data['optimal_complexity']),",
+        "            editorial_md       = data['editorial_md'],",
+        "            time_limit_ms      = data['time_limit_ms'],",
+        "            memory_limit_mb    = data['memory_limit_mb'],",
+        "            is_published       = True,",
+        "        )",
+        "        db.add(problem)",
+        "        db.flush()",
+        "        for tc in data['test_cases']:",
+        "            db.add(TestCase(",
+        "                problem_id    = problem.id,",
+        "                input_data    = tc['input'],",
+        "                expected_out  = tc['expected'],",
+        "                is_hidden     = tc['hidden'],",
+        "            ))",
+        "    db.commit()",
+        "    print(f'Seeded {len(PROBLEMS)} problems successfully.')",
+      ]),
+
+      divider(),
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 9 — COMPLEXITY ENGINE PACKAGE
+      // ══════════════════════════════════════════════════════════════════════
+      h1("9. Publishing the Complexity Engine as a pip Package"),
+      p("The complexity engine must also live as a standalone pip package under packages/complexity-engine/. This is what makes this a portfolio piece rather than just a project \u2014 it is publishable and reusable."),
+
+      h2("9.1 Package Structure"),
+      codeBlock([
+        "packages/complexity-engine/",
+        "  complexity_engine/",
+        "    __init__.py          # exports: infer_complexity, BigOClass",
+        "    parsers/",
+        "      python_parser.py   # tree-sitter setup for Python",
+        "    analyzers/",
+        "      loop_depth.py      # LoopDepthVisitor",
+        "      recursion.py       # RecursionPatternVisitor",
+        "      sort_calls.py      # SortCallDetector",
+        "      inference.py       # infer_complexity() entry point",
+        "  tests/",
+        "    test_complexity.py",
+        "  pyproject.toml",
+        "  README.md",
+      ]),
+
+      h2("9.2 pyproject.toml"),
+      codeBlock([
+        "[build-system]",
+        "requires = ['setuptools>=68', 'wheel']",
+        "build-backend = 'setuptools.backends.legacy:build'",
+        "",
+        "[project]",
+        "name            = 'complexity-engine'",
+        "version         = '0.1.0'",
+        "description     = 'Static Big-O complexity inference for Python code via Tree-sitter AST analysis'",
+        "readme          = 'README.md'",
+        "requires-python = '>=3.11'",
+        "dependencies    = ['tree-sitter>=0.21', 'tree-sitter-python>=0.21']",
+        "",
+        "[project.urls]",
+        "Homepage   = 'https://github.com/YOUR_USERNAME/algoarena'",
+        "Repository = 'https://github.com/YOUR_USERNAME/algoarena/tree/main/packages/complexity-engine'",
+      ]),
+
+      h2("9.3 Publishing to TestPyPI"),
+      codeBlock([
+        "cd packages/complexity-engine",
+        "pip install build twine",
+        "python -m build",
+        "# Test publish (safe, does not affect real PyPI):",
+        "twine upload --repository testpypi dist/*",
+        "# Verify install:",
+        "pip install --index-url https://test.pypi.org/simple/ complexity-engine",
+        "python -c 'from complexity_engine import infer_complexity; print(infer_complexity(\"for i in range(n): pass\"))'",
+      ]),
+
+      divider(),
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 10 — DEPLOYMENT
+      // ══════════════════════════════════════════════════════════════════════
+      h1("10. Deployment (Week 8)"),
+      callout("Goal", [
+        "A recruiter must be able to click a URL, see the platform, submit a solution, and receive an AI hint \u2014 without signing in, without downloading anything, without reading instructions.",
+        "Deploy the frontend to Vercel and the backend to Railway. Both have free tiers. Both work with your docker-compose infra."
+      ], C.greenLight, C.green, C.green),
+
+      h2("10.1 Backend on Railway"),
+      numbered("Go to railway.app, sign in with GitHub."),
+      numbered("New Project > Deploy from GitHub Repo > select algoarena."),
+      numbered("Add a PostgreSQL service and a Redis service from the Railway plugin marketplace."),
+      numbered("Set environment variables in the Railway dashboard (same as your .env but with production values)."),
+      numbered("Add a Dockerfile to apps/api/: FROM python:3.11-slim > COPY requirements.txt > RUN pip install -r requirements.txt > CMD uvicorn main:app --host 0.0.0.0 --port 8000"),
+      numbered("Set the root directory to apps/api in Railway settings."),
+      numbered("Railway auto-deploys on every push to main."),
+
+      h2("10.2 Frontend on Vercel"),
+      numbered("Go to vercel.com, sign in with GitHub."),
+      numbered("New Project > Import algoarena > set Root Directory to apps/web."),
+      numbered("Add all environment variables from .env.local (update NEXT_PUBLIC_API_URL to your Railway backend URL)."),
+      numbered("Vercel auto-deploys on every push to main."),
+
+      h2("10.3 Judge0 \u2014 Important Note"),
+      callout("Cold start warning", [
+        "Judge0 requires a privileged Docker container which Railway and Render do not support on free tier. For the demo, use the Judge0 Cloud free tier at judge0.com (free API key, 50 submissions/day). This is enough for a recruiter demo.",
+        "Update JUDGE0_URL in Railway to https://judge0-ce.p.rapidapi.com and add the RapidAPI key as a header in your judge.py client.",
+        "For production self-hosting, use a DigitalOcean Droplet ($4/month) and run docker compose up on it.",
+      ], C.amberLight, C.amber, C.amber),
+
+      divider(),
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 11 — WEEK-BY-WEEK CHECKLIST
+      // ══════════════════════════════════════════════════════════════════════
+      h1("11. Week-by-Week Checklist"),
+      p("Use this as your daily reference. Do not move to the next week until every item in the current week is ticked."),
+
+      simpleTable(
+        ["Week", "Must complete before moving on"],
+        [
+          ["Week 1\nInfra + Schema",
+           "docker compose up shows Judge0 at localhost:2358. Alembic migration runs clean. All 5 tables visible in pgAdmin. GET /health returns {status: ok}. POST /submissions with hardcoded test returns a submission_id."],
+          ["Week 2\nSubmission pipeline",
+           "All 6 error states (ACCEPTED, WRONG_ANSWER, TLE, MLE, RUNTIME_ERROR, COMPILE_ERROR) triggered and stored correctly. Background task completes. GET /submissions/:id returns final status within 10 seconds."],
+          ["Week 3\nFrontend editor",
+           "Monaco editor renders in browser. Submit button fires the polling loop. ResultPanel shows all error states with correct colours and details. No TypeScript errors."],
+          ["Week 4\nProblems + Auth",
+           "All 30 problems visible at /problems. GitHub OAuth login/logout works. User session persists across refresh. Problem detail page loads statement and editor. Seed script is idempotent (safe to run twice)."],
+          ["Week 5\nComplexity engine",
+           "All 7 unit tests in test_complexity.py pass. infer_complexity() is called in evaluate_submission() and result stored. User complexity shown in ResultPanel UI. Graceful null when analysis unavailable."],
+          ["Week 6\nAI tutor",
+           "GET /ai/hint/:id streams SSE tokens to AiTutorPanel. Hint renders word by word. Rate limit (3 hints) enforced in DB. Optimal submissions skip hint generation. Hint costs < $0.05 per full session."],
+          ["Week 7\nPolish",
+           "Dashboard heatmap shows solved problems by topic. Editorial pages render markdown. Rate-limit UI shows remaining hints. Mobile viewport (768px) renders without horizontal scroll. README has architecture diagram."],
+          ["Week 8\nDeploy",
+           "Live Vercel URL returns the platform. Railway backend /health returns 200. Submission on live URL completes end-to-end. Demo video recorded and linked in README. complexity-engine published to TestPyPI."],
+        ],
+        [1400, 7960]
+      ),
+
+      divider(),
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 12 — COMMON MISTAKES TO AVOID
+      // ══════════════════════════════════════════════════════════════════════
+      h1("12. Common Mistakes \u2014 Read Before You Start"),
+      callout("These are real mistakes previous interns made", [
+        "Each one cost at least 2 days of debugging. Read them now, not when you are stuck."
+      ], C.redLight, C.red, C.red),
+      ...sp(1),
+
+      h3("Mistake 1: Blocking the FastAPI event loop"),
+      p("If you call Judge0 synchronously inside an async function using requests.get() instead of httpx.AsyncClient, every submission will block the entire server. Use async/await everywhere inside async def functions."),
+
+      h3("Mistake 2: Storing secrets in git"),
+      p("Your .env and .env.local files must be in .gitignore before the first commit. Run: echo '.env' >> .gitignore && echo '.env.local' >> .gitignore before git add."),
+
+      h3("Mistake 3: Polling without a timeout"),
+      p("Your frontend polling loop must have a maximum retry count (e.g., 20 retries x 1.5s = 30s timeout). Without it, a broken submission will poll forever and drain the user's battery."),
+
+      h3("Mistake 4: Tree-sitter grammar version mismatch"),
+      p("tree-sitter and tree-sitter-python must be compatible versions. Pin them: tree-sitter==0.21.3 and tree-sitter-python==0.21.0 in requirements.txt. Mixing major versions breaks the Language() constructor."),
+
+      h3("Mistake 5: SSE connection not closed on component unmount"),
+      p("In AiTutorPanel, the AbortController ref must call abort() in a useEffect cleanup function. Without it, navigating away from a problem page while a hint is streaming will cause React state updates on unmounted components."),
+      codeBlock([
+        "useEffect(() => {",
+        "  return () => { abortRef.current?.abort(); };   // cleanup on unmount",
+        "}, []);",
+      ]),
+
+      h3("Mistake 6: Test case format inconsistency"),
+      p("Your seed script must produce test case inputs in exactly the format the submitted code expects. For Two Sum, the input is two lines: the array on line 1, the target on line 2. The submitted Python code must read from stdin using input(). Document this format in a comment next to each problem's test cases."),
+
+      h3("Mistake 7: Modifying the AI prompt without approval"),
+      p("The Socratic constraint in the system prompt is the product's intellectual contribution. If you modify it to 'be more helpful' by giving more direct answers, you break the product. Do not change the prompt without discussing it first."),
+
+      divider(),
+
+      // ══════════════════════════════════════════════════════════════════════
+      // SECTION 13 — FINAL DELIVERABLES
+      // ══════════════════════════════════════════════════════════════════════
+      h1("13. Final Deliverables"),
+      p("On the last day of Week 8, send your senior a Slack message with all of the following. Incomplete submissions will be reviewed in the next sprint."),
+
+      simpleTable(
+        ["Deliverable", "Where", "Acceptance Criteria"],
+        [
+          ["Live demo URL",      "Vercel",    "Loads without error. User can submit Two Sum and receive a result within 10 seconds."],
+          ["GitHub repo URL",    "github.com", "Public. No secrets in commits. Clean commit history (one commit per meaningful change, not 'fix fix fix')."],
+          ["README.md",         "Repo root",  "Contains: project description, architecture diagram, local setup steps, known limitations of complexity engine, link to demo."],
+          ["Demo video",        "Loom (3 min)", "Shows: problem list > open problem > submit O(n^2) solution > receive AI hint > resubmit O(n) solution > show complexity badge change."],
+          ["complexity-engine", "TestPyPI",   "pip install --index-url https://test.pypi.org/simple/ complexity-engine works. README shows a usage example."],
+        ],
+        [2000, 1800, 5560]
+      ),
+      ...sp(1),
+
+      callout("Interview talking point (memorise this)", [
+        "\"I built AlgoArena, a coding judge where the core differentiator is a static complexity analysis engine built on Tree-sitter. It parses submitted code into an AST, runs a loop-depth visitor and recursion pattern matcher to infer Big-O class, then computes the gap between the user complexity and the editorial optimal. That gap gets passed alongside the code and test results to Claude, which generates a Socratic explanation \u2014 not the answer, but the question that leads there. The scheduling algorithm for the learning path is a variant of 0/1 knapsack: the weight is estimated solve time, the value is skill gain weighted by topic weakness.\"",
+        "This answer hits: DAA, systems thinking, AI integration, and engineering depth. That is exactly what L4/L5 interviewers want to hear.",
+      ], C.purpleLight, C.purple, C.purple),
+
+    ]
+  }]
+});
+
+Packer.toBuffer(doc).then(buffer => {
+  fs.writeFileSync('/mnt/user-data/outputs/AlgoArena_InternPrompt.docx', buffer);
+  console.log('Done');
+});

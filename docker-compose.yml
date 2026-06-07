@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  judge0-server:
+    image: judge0/judge0:1.13.1
+    ports:
+      - "2358:2358"
+    environment:
+      REDIS_URL: redis://redis:6379
+      POSTGRES_HOST: db
+      POSTGRES_DB: judge0
+      POSTGRES_USER: judge0
+      POSTGRES_PASSWORD: judge0secret
+    depends_on: [db, redis]
+    privileged: true
+
+  judge0-workers:
+    image: judge0/judge0:1.13.1
+    command: ["./scripts/workers"]
+    environment:
+      REDIS_URL: redis://redis:6379
+      POSTGRES_HOST: db
+      POSTGRES_DB: judge0
+      POSTGRES_USER: judge0
+      POSTGRES_PASSWORD: judge0secret
+    depends_on: [db, redis]
+    privileged: true
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: algoarena
+      POSTGRES_PASSWORD: localpassword
+      POSTGRES_DB: algoarena
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  pg_data:
