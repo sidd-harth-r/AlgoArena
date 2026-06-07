@@ -8,11 +8,18 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
       POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
       POSTGRES_DB: judge0
       POSTGRES_USER: judge0
       POSTGRES_PASSWORD: judge0secret
-    depends_on: [db, redis]
+      ENABLE_BATCHED_SUBMISSIONS: "true"
+    depends_on:
+      db:
+        condition: service_started
+      redis:
+        condition: service_started
     privileged: true
+    restart: on-failure
 
   judge0-workers:
     image: judge0/judge0:1.13.1
@@ -20,18 +27,24 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
       POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
       POSTGRES_DB: judge0
       POSTGRES_USER: judge0
       POSTGRES_PASSWORD: judge0secret
-    depends_on: [db, redis]
+    depends_on:
+      db:
+        condition: service_started
+      redis:
+        condition: service_started
     privileged: true
+    restart: on-failure
 
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: algoarena
-      POSTGRES_PASSWORD: localpassword
-      POSTGRES_DB: algoarena
+      POSTGRES_USER: judge0
+      POSTGRES_PASSWORD: judge0secret
+      POSTGRES_DB: judge0
     ports:
       - "5432:5432"
     volumes:
