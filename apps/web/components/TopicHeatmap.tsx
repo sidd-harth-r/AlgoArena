@@ -1,12 +1,12 @@
 import type { ProblemSummary } from "@/lib/api";
 
 const heatColors = [
-  "rgba(59,130,246,0.1)",
-  "rgba(59,130,246,0.2)",
-  "rgba(59,130,246,0.35)",
-  "rgba(59,130,246,0.5)",
-  "rgba(59,130,246,0.7)",
-  "rgba(59,130,246,0.9)",
+  "rgba(250,93,0,0.08)",
+  "rgba(250,93,0,0.15)",
+  "rgba(250,93,0,0.25)",
+  "rgba(250,93,0,0.4)",
+  "rgba(250,93,0,0.6)",
+  "rgba(250,93,0,0.8)",
 ];
 
 export default function TopicHeatmap({ problems }: { problems: ProblemSummary[] }) {
@@ -28,7 +28,7 @@ export default function TopicHeatmap({ problems }: { problems: ProblemSummary[] 
           >
             <div className="mb-3 flex items-center justify-between">
               <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{topic}</span>
-              <span className="mono text-xs font-bold" style={{ color: 'var(--accent-blue)' }}>{count}</span>
+              <span className="mono text-xs font-bold" style={{ color: 'var(--accent-flame)' }}>{count}</span>
             </div>
             <div className="progress-bar">
               <div

@@ -31,6 +31,12 @@ export type SubmissionResult = {
   is_optimal?: boolean;
 };
 
+export type HintResult = {
+  hint_number: number;
+  text: string;
+  hints_revealed: number;
+};
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export async function fetchProblems(): Promise<ProblemSummary[]> {
@@ -61,6 +67,11 @@ export async function fetchSubmission(id: string): Promise<SubmissionResult> {
   return res.json();
 }
 
-export function hintUrl(submissionId: string) {
-  return `${API_URL}/ai/hint/${submissionId}`;
+export async function fetchHint(problemId: number, hintNumber: number): Promise<HintResult> {
+  const res = await fetch(`${API_URL}/ai/hint/${problemId}/${hintNumber}`, { cache: "no-store" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Hint fetch failed" }));
+    throw new Error(err.detail || "Hint fetch failed");
+  }
+  return res.json();
 }

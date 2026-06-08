@@ -1,4 +1,4 @@
-import AiTutorPanel from "@/components/AiTutorPanel";
+import HintPanel from "@/components/HintPanel";
 import CodeEditor from "@/components/Editor";
 import ResultPanel from "@/components/ResultPanel";
 import { fetchProblem } from "@/lib/api";
@@ -27,7 +27,7 @@ export default async function ProblemPage({ params }: { params: Promise<{ slug: 
           {problem.topic_tags.map((tag) => (
             <span key={tag} className="topic-tag">{tag}</span>
           ))}
-          <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium" style={{ background: 'rgba(34,211,238,0.1)', color: 'var(--accent-cyan)', border: '1px solid rgba(34,211,238,0.2)' }}>
+          <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium" style={{ background: 'rgba(250,93,0,0.07)', color: 'var(--accent-flame)', border: '1px solid rgba(250,93,0,0.15)' }}>
             Target: {problem.optimal_complexity}
           </span>
         </div>
@@ -47,11 +47,11 @@ export default async function ProblemPage({ params }: { params: Promise<{ slug: 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <div className="mb-1 text-xs" style={{ color: 'var(--text-muted)' }}>Input</div>
-                    <pre className="mono rounded p-2 text-xs" style={{ background: 'var(--bg-primary)', color: 'var(--accent-cyan)' }}>{example.input}</pre>
+                    <pre className="mono rounded p-2 text-xs" style={{ background: 'var(--bg-secondary)', color: 'var(--accent-flame)' }}>{example.input}</pre>
                   </div>
                   <div>
                     <div className="mb-1 text-xs" style={{ color: 'var(--text-muted)' }}>Expected</div>
-                    <pre className="mono rounded p-2 text-xs" style={{ background: 'var(--bg-primary)', color: 'var(--accent-green)' }}>{example.expected}</pre>
+                    <pre className="mono rounded p-2 text-xs" style={{ background: 'var(--bg-secondary)', color: 'var(--accent-green)' }}>{example.expected}</pre>
                   </div>
                 </div>
               </div>
@@ -72,7 +72,7 @@ function ProblemWorkspace({ problemId }: { problemId: number }) {
       <CodeEditor problemId={problemId} />
       <div className="grid border-t md:grid-cols-2" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-secondary)' }}>
         <ResultPanel />
-        <AiTutorPanel />
+        <HintPanel problemId={problemId} />
       </div>
     </section>
   );

@@ -53,7 +53,7 @@ export default function AiTutorPanel() {
   if (result?.is_optimal) {
     return (
       <div className="flex items-center gap-3 p-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)' }}>
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: 'rgba(26,122,74,0.08)', border: '1px solid rgba(26,122,74,0.18)' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ color: 'var(--accent-green)' }}>
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>
           </svg>
@@ -71,8 +71,8 @@ export default function AiTutorPanel() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.2)' }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ color: 'var(--accent-purple)' }}>
+          <div className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: 'rgba(250,93,0,0.07)', border: '1px solid rgba(250,93,0,0.15)' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ color: 'var(--accent-flame)' }}>
               <path d="M9.663 17h4.674M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
@@ -84,8 +84,8 @@ export default function AiTutorPanel() {
               key={i}
               className="h-1.5 w-4 rounded-full transition-all"
               style={{
-                background: i < used ? 'var(--accent-purple)' : 'var(--bg-tertiary)',
-                border: `1px solid ${i < used ? 'var(--accent-purple)' : 'var(--border-subtle)'}`,
+                background: i < used ? 'var(--accent-flame)' : 'var(--bg-secondary)',
+                border: `1px solid ${i < used ? 'var(--accent-flame)' : 'var(--border-subtle)'}`,
               }}
             />
           ))}
@@ -95,7 +95,7 @@ export default function AiTutorPanel() {
 
       {/* Hint Content */}
       {hint && (
-        <div className="animate-fade-in rounded-lg p-4" style={{ background: 'var(--bg-tertiary)', border: '1px solid rgba(167,139,250,0.15)' }}>
+        <div className="animate-fade-in rounded-lg p-4" style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(250,93,0,0.15)' }}>
           <div className={`text-sm leading-relaxed ${loading ? 'typing-cursor' : ''}`} style={{ color: 'var(--text-secondary)' }}>
             {hint}
           </div>
@@ -108,7 +108,7 @@ export default function AiTutorPanel() {
         disabled={!result?.id || loading || used >= MAX_HINTS}
         className="btn-ghost flex items-center gap-2 text-xs"
         id="get-hint-btn"
-        style={used < MAX_HINTS && result?.id && !loading ? { borderColor: 'rgba(167,139,250,0.3)', color: 'var(--accent-purple)' } : {}}
+        style={used < MAX_HINTS && result?.id && !loading ? { borderColor: 'rgba(250,93,0,0.3)', color: 'var(--accent-flame)' } : {}}
       >
         {loading ? (
           <>

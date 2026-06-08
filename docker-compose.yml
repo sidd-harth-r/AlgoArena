@@ -42,13 +42,14 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: judge0
-      POSTGRES_PASSWORD: judge0secret
-      POSTGRES_DB: judge0
+      POSTGRES_USER: algoarena
+      POSTGRES_PASSWORD: localpassword
+      POSTGRES_DB: algoarena
     ports:
       - "5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
 
   redis:
     image: redis:7-alpine

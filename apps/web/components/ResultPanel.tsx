@@ -77,7 +77,7 @@ export default function ResultPanel() {
             </div>
             <div>
               <div className="mb-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>Target</div>
-              <div className="mono text-sm font-bold" style={{ color: 'var(--accent-cyan)' }}>
+              <div className="mono text-sm font-bold" style={{ color: 'var(--accent-flame)' }}>
                 {result.optimal_complexity}
               </div>
             </div>
@@ -93,7 +93,7 @@ export default function ResultPanel() {
 
       {/* Error Details */}
       {result.error_message && (
-        <pre className="mono max-h-28 overflow-auto rounded-lg p-3 text-xs" style={{ background: 'var(--bg-primary)', color: 'var(--accent-rose)', border: '1px solid rgba(251,113,133,0.15)' }}>
+        <pre className="mono max-h-28 overflow-auto rounded-lg p-3 text-xs" style={{ background: 'var(--bg-secondary)', color: 'var(--accent-rose)', border: '1px solid rgba(155,32,32,0.15)' }}>
           {result.error_message}
         </pre>
       )}

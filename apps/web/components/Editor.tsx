@@ -54,7 +54,7 @@ export default function CodeEditor({ problemId }: { problemId: number }) {
       <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 rounded-md px-3 py-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ color: 'var(--accent-blue)' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ color: 'var(--accent-flame)' }}>
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <span className="mono text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Python 3</span>

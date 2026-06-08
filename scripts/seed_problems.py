@@ -1,4 +1,4 @@
-"""Seed all 30 AlgoArena problems with statements, editorials, and ≥10 test cases each.
+"""Seed all 44 AlgoArena problems with statements, editorials, and ≥10 test cases each.
 
 Usage:
     cd project_root
@@ -962,6 +962,454 @@ DP: dp[i] = length of LIS ending at i. For each i, check all j < i. O(n²) time.
             ("[10,22,9,33,21,50,41,60]", "5", True),
         ],
     },
+    # ─── NEW PROBLEMS (14 additions for v2 roadmap) ─────────────────────── #
+    {
+        "slug": "implement-trie",
+        "title": "Implement Trie",
+        "topic": "Tries",
+        "difficulty": "medium",
+        "complexity": BigOClass.ON,
+        "statement": """## Implement Trie (Prefix Tree)
+
+Implement a trie with `insert`, `search`, and `startsWith` methods.
+
+### Input
+- Line 1: JSON array of operations: ["insert", "search", "startsWith"]
+- Line 2: JSON array of arguments: [["apple"], ["apple"], ["app"]]
+
+### Output
+- A JSON array of results (null for insert, true/false for search/startsWith)
+""",
+        "editorial": """## Editorial
+Use a dictionary-based tree. Each node has children dict and a boolean end marker. Insert walks/creates nodes. Search walks and checks end. StartsWith walks without checking end.""",
+        "cases": [
+            ('[\"insert\",\"search\",\"search\",\"startsWith\",\"insert\",\"search\"]\n[[\"apple\"],[\"apple\"],[\"app\"],[\"app\"],[\"app\"],[\"app\"]]', '[null,true,false,true,null,true]', False),
+            ('[\"insert\",\"search\"]\n[[\"hello\"],[\"hello\"]]', '[null,true]', True),
+            ('[\"insert\",\"search\"]\n[[\"hello\"],[\"hell\"]]', '[null,false]', True),
+            ('[\"insert\",\"startsWith\"]\n[[\"hello\"],[\"hell\"]]', '[null,true]', True),
+            ('[\"insert\",\"insert\",\"search\"]\n[[\"ab\"],[\"abc\"],[\"abc\"]]', '[null,null,true]', True),
+            ('[\"insert\",\"search\",\"startsWith\"]\n[[\"a\"],[\"a\"],[\"a\"]]', '[null,true,true]', True),
+            ('[\"search\"]\n[[\"empty\"]]', '[false]', True),
+            ('[\"insert\",\"insert\",\"search\",\"search\"]\n[[\"bat\"],[\"ball\"],[\"bat\"],[\"ball\"]]', '[null,null,true,true]', True),
+            ('[\"insert\",\"startsWith\",\"startsWith\"]\n[[\"abc\"],[\"ab\"],[\"abd\"]]', '[null,true,false]', True),
+            ('[\"insert\",\"insert\",\"search\"]\n[[\"abc\"],[\"ab\"],[\"ab\"]]', '[null,null,true]', True),
+        ],
+    },
+    {
+        "slug": "kth-largest-element",
+        "title": "Kth Largest Element in an Array",
+        "topic": "Heap",
+        "difficulty": "medium",
+        "complexity": BigOClass.ON,
+        "statement": """## Kth Largest Element
+
+Find the kth largest element in an unsorted array.
+
+### Input
+- Line 1: a JSON array of integers
+- Line 2: an integer k
+
+### Output
+- A single integer (the kth largest element)
+""",
+        "editorial": """## Editorial
+Use a min-heap of size k. Iterate through the array, maintaining only the k largest. The top of the heap is the answer. O(n log k) average. QuickSelect gives O(n) average.""",
+        "cases": [
+            ("[3,2,1,5,6,4]\n2", "5", False),
+            ("[3,2,3,1,2,4,5,5,6]\n4", "4", False),
+            ("[1]\n1", "1", True),
+            ("[7,6,5,4,3,2,1]\n5", "3", True),
+            ("[1,2,3,4,5,6,7]\n1", "7", True),
+            ("[1,2,3,4,5,6,7]\n7", "1", True),
+            ("[99,99,99]\n1", "99", True),
+            ("[5,2,4,1,3,6,0]\n4", "3", True),
+            ("[-1,-2,-3,-4]\n2", "-2", True),
+            ("[2,1]\n2", "1", True),
+        ],
+    },
+    {
+        "slug": "find-median-from-stream",
+        "title": "Find Median from Data Stream",
+        "topic": "Heap",
+        "difficulty": "hard",
+        "complexity": BigOClass.OLOGN,
+        "statement": """## Find Median from Data Stream
+
+Design a data structure that supports adding integers and finding the median.
+
+### Input
+- Line 1: JSON array of operations: ["addNum", "findMedian"]
+- Line 2: JSON array of arguments: [[1], [], [2], []]
+
+### Output
+- A JSON array of results (null for addNum, float for findMedian)
+""",
+        "editorial": """## Editorial
+Use two heaps: a max-heap for the lower half and a min-heap for the upper half. Balance them so sizes differ by at most 1. Median is top of the larger heap, or average of both tops.""",
+        "cases": [
+            ('[\"addNum\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\"]\n[[1],[2],[],[3],[]]', '[null,null,1.5,null,2.0]', False),
+            ('[\"addNum\",\"findMedian\"]\n[[5],[]]', '[null,5.0]', True),
+            ('[\"addNum\",\"addNum\",\"findMedian\"]\n[[1],[1],[]]', '[null,null,1.0]', True),
+            ('[\"addNum\",\"addNum\",\"addNum\",\"findMedian\"]\n[[1],[2],[3],[]]', '[null,null,null,2.0]', True),
+            ('[\"addNum\",\"addNum\",\"addNum\",\"addNum\",\"findMedian\"]\n[[4],[3],[2],[1],[]]', '[null,null,null,null,2.5]', True),
+            ('[\"addNum\",\"addNum\",\"addNum\",\"addNum\",\"addNum\",\"findMedian\"]\n[[1],[2],[3],[4],[5],[]]', '[null,null,null,null,null,3.0]', True),
+            ('[\"addNum\",\"findMedian\",\"addNum\",\"findMedian\"]\n[[10],[],[20],[]]', '[null,10.0,null,15.0]', True),
+            ('[\"addNum\",\"addNum\",\"addNum\",\"findMedian\"]\n[[-1],[-2],[-3],[]]', '[null,null,null,-2.0]', True),
+            ('[\"addNum\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\"]\n[[6],[10],[],[2],[],[6],[]]', '[null,null,8.0,null,6.0,null,6.0]', True),
+            ('[\"addNum\",\"findMedian\",\"addNum\",\"findMedian\",\"addNum\",\"findMedian\"]\n[[1],[],[2],[],[3],[]]', '[null,1.0,null,1.5,null,2.0]', True),
+        ],
+    },
+    {
+        "slug": "network-delay-time",
+        "title": "Network Delay Time",
+        "topic": "Graphs",
+        "difficulty": "medium",
+        "complexity": BigOClass.OELOGV,
+        "statement": """## Network Delay Time
+
+Given a network of `n` nodes and weighted directed edges `times[i] = [u, v, w]`, find the time it takes for all nodes to receive a signal sent from node `k`. Return -1 if not all nodes are reachable.
+
+### Input
+- Line 1: JSON array of edges [[u,v,w], ...]
+- Line 2: n (number of nodes)
+- Line 3: k (source node)
+
+### Output
+- A single integer (minimum time for all nodes to receive the signal, or -1)
+""",
+        "editorial": """## Editorial
+Classic Dijkstra's algorithm. Build adjacency list, use a min-heap. Track shortest distance to each node. Answer is max of all distances if all reachable, else -1.""",
+        "cases": [
+            ("[[2,1,1],[2,3,1],[3,4,1]]\n4\n2", "2", False),
+            ("[[1,2,1]]\n2\n1", "1", False),
+            ("[[1,2,1]]\n2\n2", "-1", True),
+            ("[[1,2,1],[2,3,2],[1,3,4]]\n3\n1", "3", True),
+            ("[[1,2,1],[2,1,1]]\n2\n1", "1", True),
+            ("[[1,2,5],[1,3,2],[3,2,1]]\n3\n1", "3", True),
+            ("[[1,2,1],[2,3,1],[3,4,1],[4,5,1]]\n5\n1", "4", True),
+            ("[[1,2,1],[1,3,1],[1,4,1]]\n4\n1", "1", True),
+            ("[[1,2,10],[1,3,1],[3,2,1]]\n3\n1", "2", True),
+            ("[[1,2,1],[2,3,2],[3,1,3]]\n3\n1", "3", True),
+        ],
+    },
+    {
+        "slug": "unique-paths",
+        "title": "Unique Paths",
+        "topic": "Dynamic programming",
+        "difficulty": "medium",
+        "complexity": BigOClass.OMN,
+        "statement": """## Unique Paths
+
+A robot is on an `m x n` grid starting at top-left. It can only move right or down. How many unique paths are there to the bottom-right corner?
+
+### Input
+- Line 1: m (rows)
+- Line 2: n (columns)
+
+### Output
+- A single integer (number of unique paths)
+""",
+        "editorial": """## Editorial
+DP: dp[i][j] = dp[i-1][j] + dp[i][j-1]. Base case: first row and first column are all 1. Can optimize to 1D array.""",
+        "cases": [
+            ("3\n7", "28", False),
+            ("3\n2", "3", False),
+            ("1\n1", "1", True),
+            ("2\n2", "2", True),
+            ("7\n3", "28", True),
+            ("3\n3", "6", True),
+            ("4\n4", "20", True),
+            ("5\n5", "70", True),
+            ("10\n10", "48620", True),
+            ("1\n100", "1", True),
+        ],
+    },
+    {
+        "slug": "longest-common-subsequence",
+        "title": "Longest Common Subsequence",
+        "topic": "Dynamic programming",
+        "difficulty": "medium",
+        "complexity": BigOClass.OMN,
+        "statement": """## Longest Common Subsequence
+
+Given two strings `text1` and `text2`, return the length of their longest common subsequence.
+
+### Input
+- Line 1: text1
+- Line 2: text2
+
+### Output
+- A single integer (length of LCS)
+""",
+        "editorial": """## Editorial
+Classic 2D DP. dp[i][j] = length of LCS of text1[:i] and text2[:j]. If text1[i-1] == text2[j-1], dp[i][j] = dp[i-1][j-1] + 1, else max(dp[i-1][j], dp[i][j-1]).""",
+        "cases": [
+            ("abcde\nace", "3", False),
+            ("abc\nabc", "3", False),
+            ("abc\ndef", "0", True),
+            ("a\na", "1", True),
+            ("a\nb", "0", True),
+            ("abcba\nabcbcba", "5", True),
+            ("oxcpqrsvwf\nshmtulqrypy", "2", True),
+            ("bsbininm\njmjkbkjkv", "1", True),
+            ("abcd\nabcd", "4", True),
+            ("hofubmnylkra\npqhgxgdofcvmr", "2", True),
+        ],
+    },
+    {
+        "slug": "merge-intervals",
+        "title": "Merge Intervals",
+        "topic": "Intervals",
+        "difficulty": "medium",
+        "complexity": BigOClass.ONlogN,
+        "statement": """## Merge Intervals
+
+Given an array of intervals where `intervals[i] = [start, end]`, merge all overlapping intervals.
+
+### Input
+- Line 1: a JSON array of intervals [[start, end], ...]
+
+### Output
+- A JSON array of merged intervals (sorted by start)
+""",
+        "editorial": """## Editorial
+Sort by start time. Iterate and merge: if current start <= prev end, extend prev end. Otherwise start a new interval. O(n log n) for sort.""",
+        "cases": [
+            ("[[1,3],[2,6],[8,10],[15,18]]", "[[1,6],[8,10],[15,18]]", False),
+            ("[[1,4],[4,5]]", "[[1,5]]", False),
+            ("[[1,4],[0,4]]", "[[0,4]]", True),
+            ("[[1,1]]", "[[1,1]]", True),
+            ("[[1,4],[2,3]]", "[[1,4]]", True),
+            ("[[1,10],[2,3],[4,5],[6,7]]", "[[1,10]]", True),
+            ("[[1,2],[3,4],[5,6]]", "[[1,2],[3,4],[5,6]]", True),
+            ("[[1,5],[2,3],[4,8],[9,10]]", "[[1,8],[9,10]]", True),
+            ("[[0,0],[1,1]]", "[[0,0],[1,1]]", True),
+            ("[[2,3],[4,5],[6,7],[8,9],[1,10]]", "[[1,10]]", True),
+        ],
+    },
+    {
+        "slug": "insert-interval",
+        "title": "Insert Interval",
+        "topic": "Intervals",
+        "difficulty": "medium",
+        "complexity": BigOClass.ON,
+        "statement": """## Insert Interval
+
+Given a sorted list of non-overlapping intervals and a new interval, insert it and merge if necessary.
+
+### Input
+- Line 1: a JSON array of intervals [[start, end], ...]
+- Line 2: a JSON array [newStart, newEnd]
+
+### Output
+- A JSON array of intervals after insertion
+""",
+        "editorial": """## Editorial
+Three phases: (1) add all intervals before new, (2) merge overlapping ones, (3) add remaining. O(n) single pass.""",
+        "cases": [
+            ("[[1,3],[6,9]]\n[2,5]", "[[1,5],[6,9]]", False),
+            ("[[1,2],[3,5],[6,7],[8,10],[12,16]]\n[4,8]", "[[1,2],[3,10],[12,16]]", False),
+            ("[]\n[5,7]", "[[5,7]]", True),
+            ("[[1,5]]\n[2,3]", "[[1,5]]", True),
+            ("[[1,5]]\n[6,8]", "[[1,5],[6,8]]", True),
+            ("[[1,5]]\n[0,0]", "[[0,0],[1,5]]", True),
+            ("[[1,2],[5,6]]\n[3,4]", "[[1,2],[3,4],[5,6]]", True),
+            ("[[1,5]]\n[0,6]", "[[0,6]]", True),
+            ("[[3,5],[12,15]]\n[6,6]", "[[3,5],[6,6],[12,15]]", True),
+            ("[[1,2],[3,4],[5,6]]\n[0,7]", "[[0,7]]", True),
+        ],
+    },
+    {
+        "slug": "jump-game",
+        "title": "Jump Game",
+        "topic": "Greedy",
+        "difficulty": "medium",
+        "complexity": BigOClass.ON,
+        "statement": """## Jump Game
+
+Given an array of non-negative integers where each element represents the maximum jump length from that position, determine if you can reach the last index.
+
+### Input
+- Line 1: a JSON array of non-negative integers
+
+### Output
+- `true` or `false`
+""",
+        "editorial": """## Editorial
+Greedy: track the farthest reachable index. Iterate left to right. If current index > farthest, return false. Update farthest = max(farthest, i + nums[i]).""",
+        "cases": [
+            ("[2,3,1,1,4]", "true", False),
+            ("[3,2,1,0,4]", "false", False),
+            ("[0]", "true", True),
+            ("[1]", "true", True),
+            ("[1,0]", "true", True),
+            ("[0,1]", "false", True),
+            ("[5,0,0,0,0]", "true", True),
+            ("[1,1,1,1,1]", "true", True),
+            ("[1,2,3]", "true", True),
+            ("[2,0,0]", "true", True),
+        ],
+    },
+    {
+        "slug": "counting-bits",
+        "title": "Counting Bits",
+        "topic": "Bit manipulation",
+        "difficulty": "easy",
+        "complexity": BigOClass.ON,
+        "statement": """## Counting Bits
+
+Given an integer `n`, return an array of length `n+1` where `ans[i]` is the number of 1's in the binary representation of `i`.
+
+### Input
+- Line 1: a non-negative integer n
+
+### Output
+- A JSON array of integers
+""",
+        "editorial": """## Editorial
+DP approach: ans[i] = ans[i >> 1] + (i & 1). Each number's bit count = its right-shifted version's count + its last bit. O(n).""",
+        "cases": [
+            ("2", "[0,1,1]", False),
+            ("5", "[0,1,1,2,1,2]", False),
+            ("0", "[0]", True),
+            ("1", "[0,1]", True),
+            ("3", "[0,1,1,2]", True),
+            ("7", "[0,1,1,2,1,2,2,3]", True),
+            ("10", "[0,1,1,2,1,2,2,3,1,2,2]", True),
+            ("4", "[0,1,1,2,1]", True),
+            ("8", "[0,1,1,2,1,2,2,3,1]", True),
+            ("15", "[0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4]", True),
+        ],
+    },
+    {
+        "slug": "rotate-image",
+        "title": "Rotate Image",
+        "topic": "Math",
+        "difficulty": "medium",
+        "complexity": BigOClass.ON2,
+        "statement": """## Rotate Image
+
+Given an n x n 2D matrix representing an image, rotate it 90 degrees clockwise in-place.
+
+### Input
+- Line 1: a JSON 2D array (n x n matrix)
+
+### Output
+- The rotated JSON 2D array
+""",
+        "editorial": """## Editorial
+Transpose the matrix (swap rows/cols), then reverse each row. Or do layer-by-layer rotation. Both O(n^2).""",
+        "cases": [
+            ("[[1,2,3],[4,5,6],[7,8,9]]", "[[7,4,1],[8,5,2],[9,6,3]]", False),
+            ("[[5,1,9,11],[2,4,8,10],[13,3,6,7],[15,14,12,16]]", "[[15,13,2,5],[14,3,4,1],[12,6,8,9],[16,7,10,11]]", False),
+            ("[[1]]", "[[1]]", True),
+            ("[[1,2],[3,4]]", "[[3,1],[4,2]]", True),
+            ("[[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]]", "[[13,9,5,1],[14,10,6,2],[15,11,7,3],[16,12,8,4]]", True),
+            ("[[0]]", "[[0]]", True),
+            ("[[1,0],[0,1]]", "[[0,1],[1,0]]", True),
+            ("[[2,29,20,26,16,28],[12,27,9,25,13,21],[32,33,32,2,28,14],[13,14,32,27,22,29],[31,27,33,34,26,21],[18,10,34,29,16,12]]", "[[18,31,13,32,12,2],[10,27,14,33,27,29],[34,33,32,32,9,20],[29,34,27,2,25,26],[16,26,22,28,13,16],[12,21,29,14,21,28]]", True),
+            ("[[1,2,3],[4,5,6],[7,8,9]]", "[[7,4,1],[8,5,2],[9,6,3]]", True),
+            ("[[3,1],[4,2]]", "[[4,3],[2,1]]", True),
+        ],
+    },
+    {
+        "slug": "maximum-product-subarray",
+        "title": "Maximum Product Subarray",
+        "topic": "Arrays",
+        "difficulty": "medium",
+        "complexity": BigOClass.ON,
+        "statement": """## Maximum Product Subarray
+
+Given an integer array `nums`, find a contiguous subarray that has the largest product and return the product.
+
+### Input
+- Line 1: a JSON array of integers
+
+### Output
+- A single integer (maximum product)
+""",
+        "editorial": """## Editorial
+Track both max and min products at each position (since a negative times a negative can become the max). O(n) time, O(1) space.""",
+        "cases": [
+            ("[2,3,-2,4]", "6", False),
+            ("[-2,0,-1]", "0", False),
+            ("[0,2]", "2", True),
+            ("[-2]", "-2", True),
+            ("[2,-5,-2,-4,3]", "24", True),
+            ("[-1,-2,-3]", "6", True),
+            ("[1,2,3,4]", "24", True),
+            ("[-2,3,-4]", "24", True),
+            ("[0,0,0]", "0", True),
+            ("[2,-1,1,1]", "2", True),
+        ],
+    },
+    {
+        "slug": "cheapest-flights-k-stops",
+        "title": "Cheapest Flights Within K Stops",
+        "topic": "Graphs",
+        "difficulty": "medium",
+        "complexity": BigOClass.OVE,
+        "statement": """## Cheapest Flights Within K Stops
+
+Given `n` cities connected by flights `[from, to, price]`, find the cheapest price from `src` to `dst` with at most `k` stops. Return -1 if no such route.
+
+### Input
+- Line 1: n (number of cities)
+- Line 2: JSON array of flights [[from, to, price], ...]
+- Line 3: src
+- Line 4: dst
+- Line 5: k (max stops)
+
+### Output
+- A single integer (cheapest price, or -1)
+""",
+        "editorial": """## Editorial
+Use Bellman-Ford with k+1 iterations, or BFS with distance tracking. Bellman-Ford: relax all edges k+1 times, keeping a copy of distances from previous round.""",
+        "cases": [
+            ("4\n[[0,1,100],[1,2,100],[2,0,100],[1,3,600],[2,3,200]]\n0\n3\n1", "700", False),
+            ("3\n[[0,1,100],[1,2,100],[0,2,500]]\n0\n2\n1", "200", False),
+            ("3\n[[0,1,100],[1,2,100],[0,2,500]]\n0\n2\n0", "500", True),
+            ("2\n[[0,1,100]]\n0\n1\n0", "100", True),
+            ("2\n[[0,1,100]]\n1\n0\n0", "-1", True),
+            ("5\n[[0,1,5],[1,2,5],[0,3,2],[3,1,2],[1,4,1],[4,2,1]]\n0\n2\n2", "7", True),
+            ("3\n[]\n0\n2\n1", "-1", True),
+            ("4\n[[0,1,1],[0,2,5],[1,2,1],[2,3,1]]\n0\n3\n1", "6", True),
+            ("3\n[[0,1,2],[1,2,1],[0,2,4]]\n0\n2\n0", "4", True),
+            ("3\n[[0,1,1],[1,2,1],[0,2,100]]\n0\n2\n1", "2", True),
+        ],
+    },
+    {
+        "slug": "word-search-ii",
+        "title": "Word Search II",
+        "topic": "Tries",
+        "difficulty": "hard",
+        "complexity": BigOClass.ON2,
+        "statement": """## Word Search II
+
+Given an `m x n` board of characters and a list of words, return all words that can be constructed from letters of sequentially adjacent cells (up/down/left/right). Each cell may only be used once per word.
+
+### Input
+- Line 1: a JSON 2D array of characters (the board)
+- Line 2: a JSON array of strings (words to find)
+
+### Output
+- A sorted JSON array of found words
+""",
+        "editorial": """## Editorial
+Build a Trie from the word list. DFS from each cell, walking the Trie. Prune branches when no Trie children match. Mark found words to avoid duplicates.""",
+        "cases": [
+            ('[[\"o\",\"a\",\"a\",\"n\"],[\"e\",\"t\",\"a\",\"e\"],[\"i\",\"h\",\"k\",\"r\"],[\"i\",\"f\",\"l\",\"v\"]]\n[\"oath\",\"pea\",\"eat\",\"rain\"]', '[\"eat\",\"oath\"]', False),
+            ('[[\"a\",\"b\"],[\"c\",\"d\"]]\n[\"abcb\"]', '[]', False),
+            ('[[\"a\"]]\n[\"a\"]', '[\"a\"]', True),
+            ('[[\"a\",\"b\"],[\"c\",\"d\"]]\n[\"ab\",\"cd\",\"ac\",\"bd\"]', '[\"ab\",\"ac\",\"bd\",\"cd\"]', True),
+            ('[[\"a\",\"a\"]]\n[\"aa\"]', '[\"aa\"]', True),
+            ('[[\"a\",\"a\"]]\n[\"aaa\"]', '[]', True),
+            ('[[\"a\",\"b\",\"c\"],[\"d\",\"e\",\"f\"],[\"g\",\"h\",\"i\"]]\n[\"abc\",\"cfi\",\"beh\",\"defi\"]', '[\"abc\",\"beh\",\"cfi\",\"defi\"]', True),
+            ('[[\"x\"]]\n[\"y\"]', '[]', True),
+            ('[[\"a\",\"b\"],[\"c\",\"d\"]]\n[\"abdc\",\"acdb\"]', '[\"abdc\",\"acdb\"]', True),
+            ('[[\"o\",\"a\",\"b\",\"n\"],[\"o\",\"t\",\"a\",\"e\"],[\"a\",\"h\",\"k\",\"r\"],[\"a\",\"f\",\"l\",\"v\"]]\n[\"oa\",\"oaa\"]', '[\"oa\",\"oaa\"]', True),
+        ],
+    },
 ]
 
 # ─── Seeder ────────────────────────────────────────────────────────────────── #
@@ -974,7 +1422,7 @@ def seed():
         for index, prob in enumerate(PROBLEMS, start=1):
             slug = prob["slug"]
             problem = db.query(Problem).filter(Problem.slug == slug).first()
-            tags = [part.strip().lower().replace(" ", "-") for part in prob["topic"].split("/")]
+            tags = [part.strip() for part in prob["topic"].split("/")]
             if not problem:
                 problem = Problem(slug=slug)
                 db.add(problem)

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session, selectinload
 
 from models.database import SessionLocal, get_db
-from models.models import Problem, Submission, SubmissionStatus, _IS_SQLITE
+from models.models import Problem, Submission, SubmissionStatus
 from routers.users import DEMO_USER_ID, ensure_demo_user
 from services.complexity import complexity_rank, infer_complexity
 from services.judge import submit_to_judge0
@@ -17,6 +17,7 @@ class SubmitRequest(BaseModel):
     problem_id: int
     code: str
     language: str = "python"
+    contest_id: str | None = None
 
 
 def serialize_submission(sub: Submission):
@@ -43,8 +44,29 @@ async def create_submission(req: SubmitRequest, background_tasks: BackgroundTask
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
     ensure_demo_user(db)
-    sub_id = str(uuid.uuid4()) if _IS_SQLITE else uuid.uuid4()
-    sub = Submission(id=sub_id, problem_id=req.problem_id, user_id=DEMO_USER_ID, code=req.code, language=req.language, status=SubmissionStatus.PENDING, total_count=len(problem.test_cases), optimal_complexity=problem.optimal_complexity)
+
+    # Validate contest if provided
+    contest_uuid = None
+    if req.contest_id:
+        from models.models import Contest, ContestStatus
+        contest = db.query(Contest).filter(Contest.id == uuid.UUID(req.contest_id)).first()
+        if not contest:
+            raise HTTPException(status_code=404, detail="Contest not found")
+        if contest.status != ContestStatus.ACTIVE:
+            raise HTTPException(status_code=400, detail="Contest is not active")
+        contest_uuid = contest.id
+
+    sub = Submission(
+        id=uuid.uuid4(),
+        problem_id=req.problem_id,
+        user_id=DEMO_USER_ID,
+        code=req.code,
+        language=req.language,
+        status=SubmissionStatus.PENDING,
+        total_count=len(problem.test_cases),
+        optimal_complexity=problem.optimal_complexity,
+        contest_id=contest_uuid,
+    )
     db.add(sub)
     db.commit()
     background_tasks.add_task(evaluate_submission, str(sub.id))

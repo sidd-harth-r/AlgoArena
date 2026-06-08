@@ -5,38 +5,14 @@ import enum
 import uuid
 
 from dotenv import load_dotenv
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, TypeDecorator
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, ARRAY
 from sqlalchemy import Enum as SAEnum
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base, relationship
 
 load_dotenv()
 
 Base = declarative_base()
-
-# Detect database type from environment
-_DB_URL = os.getenv("DATABASE_URL", "")
-_IS_SQLITE = _DB_URL.startswith("sqlite")
-
-# --------------------------------------------------------------------------- #
-# Portable ARRAY type — JSON text on SQLite, native ARRAY on PostgreSQL
-# --------------------------------------------------------------------------- #
-if _IS_SQLITE:
-    class StringList(TypeDecorator):
-        impl = Text
-        cache_ok = True
-        def process_bind_param(self, value, dialect):
-            return json.dumps(value) if value is not None else "[]"
-        def process_result_value(self, value, dialect):
-            return json.loads(value) if value else []
-    _ArrayCol = StringList
-    _UUIDCol = String(36)
-    _uuid_default = lambda: str(uuid.uuid4())
-else:
-    from sqlalchemy import ARRAY
-    from sqlalchemy.dialects.postgresql import UUID
-    _ArrayCol = None  # sentinel: use ARRAY(String) directly
-    _UUIDCol = UUID(as_uuid=True)
-    _uuid_default = uuid.uuid4
 
 
 class SubmissionStatus(enum.Enum):
@@ -60,6 +36,9 @@ class BigOClass(enum.Enum):
     ON3 = "O(n^3)"
     O2N = "O(2^n)"
     OVE = "O(V+E)"
+    OMN = "O(m*n)"
+    ONLOGK = "O(n log k)"
+    OELOGV = "O(E log V)"
 
 
 class Difficulty(enum.Enum):
@@ -68,10 +47,15 @@ class Difficulty(enum.Enum):
     HARD = "hard"
 
 
+class ContestStatus(enum.Enum):
+    ACTIVE = "ACTIVE"
+    FINISHED = "FINISHED"
+
+
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(_UUIDCol, primary_key=True, default=_uuid_default)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True, nullable=False)
     username = Column(String, unique=True, nullable=False)
     avatar_url = Column(String)
@@ -80,6 +64,7 @@ class User(Base):
     last_active = Column(DateTime)
     submissions = relationship("Submission", back_populates="user")
     hint_usages = relationship("HintUsage", back_populates="user")
+    contests = relationship("Contest", back_populates="user")
 
 
 class Problem(Base):
@@ -90,7 +75,7 @@ class Problem(Base):
     slug = Column(String, unique=True, nullable=False)
     statement_md = Column(Text, nullable=False)
     difficulty = Column(SAEnum(Difficulty), nullable=False)
-    topic_tags = Column(_ArrayCol if _IS_SQLITE else ARRAY(String), default=[])
+    topic_tags = Column(ARRAY(String), default=[])
     optimal_complexity = Column(SAEnum(BigOClass), nullable=False)
     editorial_md = Column(Text)
     time_limit_ms = Column(Integer, default=2000)
@@ -115,9 +100,10 @@ class TestCase(Base):
 class Submission(Base):
     __tablename__ = "submissions"
 
-    id = Column(_UUIDCol, primary_key=True, default=_uuid_default)
-    user_id = Column(_UUIDCol, ForeignKey("users.id"), nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     problem_id = Column(Integer, ForeignKey("problems.id"), nullable=False)
+    contest_id = Column(UUID(as_uuid=True), ForeignKey("contests.id"), nullable=True)
     code = Column(Text, nullable=False)
     language = Column(String, nullable=False)
     status = Column(SAEnum(SubmissionStatus), default=SubmissionStatus.PENDING)
@@ -136,14 +122,30 @@ class Submission(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     user = relationship("User", back_populates="submissions")
     problem = relationship("Problem", back_populates="submissions")
+    contest = relationship("Contest", back_populates="submissions")
 
 
 class HintUsage(Base):
     __tablename__ = "hint_usage"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(_UUIDCol, ForeignKey("users.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     problem_id = Column(Integer, ForeignKey("problems.id"), nullable=False)
     hint_count = Column(Integer, default=0)
     last_hint_at = Column(DateTime)
     user = relationship("User", back_populates="hint_usages")
+
+
+class Contest(Base):
+    __tablename__ = "contests"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    status = Column(SAEnum(ContestStatus), default=ContestStatus.ACTIVE)
+    duration_minutes = Column(Integer, nullable=False)
+    topic_filter = Column(ARRAY(String), default=[])
+    problem_ids = Column(ARRAY(Integer), default=[])
+    started_at = Column(DateTime, default=datetime.utcnow)
+    ended_at = Column(DateTime, nullable=True)
+    user = relationship("User", back_populates="contests")
+    submissions = relationship("Submission", back_populates="contest")

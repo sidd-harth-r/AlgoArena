@@ -1,28 +1,16 @@
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from models.models import Base
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./algoarena.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://algoarena:localpassword@localhost:5432/algoarena")
 
-connect_args = {}
-if DATABASE_URL.startswith("sqlite"):
-    connect_args["check_same_thread"] = False
-
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
-
-if DATABASE_URL.startswith("sqlite"):
-    @event.listens_for(engine, "connect")
-    def _set_sqlite_pragma(dbapi_connection, connection_record):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA journal_mode=WAL")
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
+engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
