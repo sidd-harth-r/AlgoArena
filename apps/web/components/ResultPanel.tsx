@@ -82,7 +82,7 @@ export default function ResultPanel() {
               </div>
             </div>
           </div>
-          {result.is_optimal && (
+          {result.is_optimal && result.status === "ACCEPTED" && (
             <div className="mt-2 flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--accent-green)' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
               Optimal complexity achieved!

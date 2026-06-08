@@ -31,12 +31,39 @@ RULES:
 - Keep your response under 100 words.
 """
 
-# Progressive fallback hints when no API key is configured.
-FALLBACK_HINTS = [
-    "What repeated work does your solution perform as the input grows, and can any result be remembered instead of rediscovered?",
-    "Consider whether you truly need to compare every pair. Is there a way to know instantly if a complement exists?",
-    "Think about a structure that answers 'have I seen this value before?' in constant time. How would that reduce your nested work?",
-]
+def get_fallback_hint(hint_number: int, problem_statement: str) -> str:
+    statement_lower = problem_statement.lower()
+    
+    if "array" in statement_lower and ("sum" in statement_lower or "target" in statement_lower):
+        hints = [
+            "What repeated work does your solution perform as the input array grows? Can any result be remembered instead of rediscovered?",
+            "Consider whether you truly need to compare every pair. Is there a way to know instantly if a complement exists?",
+            "Think about a structure that answers 'have I seen this value before?' in constant time. How would that reduce your nested work?"
+        ]
+    elif "string" in statement_lower or "palindrome" in statement_lower or "substring" in statement_lower:
+        hints = [
+            "What redundant comparisons are you making when checking the string? Can you reuse previous checks?",
+            "Consider how you might expand from the center or use a sliding window to avoid re-evaluating the same characters.",
+            "Think about whether storing the frequencies or positions of characters could help you skip unnecessary work."
+        ]
+    elif "tree" in statement_lower or "node" in statement_lower or "graph" in statement_lower:
+        hints = [
+            "Are you visiting the same nodes multiple times? What traversal method fits this problem best?",
+            "Consider whether you need a depth-first or breadth-first approach. What information needs to be passed down or up the tree/graph?",
+            "Think about how recursion or a queue/stack could simplify the tracking of your current state."
+        ]
+    else:
+        # Extract a short context from the first line for a generic but tailored feel
+        lines = [line.strip() for line in problem_statement.strip().split('\n') if line.strip() and not line.startswith('#')]
+        context = lines[0][:40] + "..." if lines else "this problem"
+        hints = [
+            f"Regarding '{context}': What is the core bottleneck in your approach? Consider what repeated calculations can be cached or avoided.",
+            f"For '{context}', think about the constraints. Could an auxiliary data structure (like a hash map, set, or heap) help optimize the bottleneck?",
+            f"Is there a different algorithmic paradigm (such as binary search, two pointers, or dynamic programming) that fits '{context}' better?"
+        ]
+        
+    idx = max(0, min(hint_number - 1, len(hints) - 1))
+    return hints[idx]
 
 
 def _build_user_prompt(hint_number: int, problem_statement: str,
@@ -60,8 +87,7 @@ def generate_hint(hint_number: int, problem_statement: str,
     """Generate a single hint (non-streaming). Returns the hint text."""
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key or api_key.startswith("sk-ant-your-key"):
-        idx = max(0, min(hint_number - 1, len(FALLBACK_HINTS) - 1))
-        return FALLBACK_HINTS[idx]
+        return get_fallback_hint(hint_number, problem_statement)
 
     system_prompts = {1: HINT_1_SYSTEM, 2: HINT_2_SYSTEM, 3: HINT_3_SYSTEM}
     system = system_prompts.get(hint_number, HINT_1_SYSTEM)
