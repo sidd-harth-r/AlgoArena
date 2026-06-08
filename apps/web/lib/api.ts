@@ -75,3 +75,43 @@ export async function fetchHint(problemId: number, hintNumber: number): Promise<
   }
   return res.json();
 }
+
+export type DashboardData = {
+  stats: {
+    easy: { solved: number; total: number };
+    medium: { solved: number; total: number };
+    hard: { solved: number; total: number };
+    total: { solved: number; total: number };
+    attempting: number;
+  };
+  calendar: Record<string, number>;
+  streak: {
+    current: number;
+    max: number;
+    total_active_days: number;
+  };
+  recent_ac: {
+    id: string;
+    problem_id: number;
+    problem_title: string;
+    problem_slug: string;
+    created_at: string;
+    language: string;
+  }[];
+  recent_all: {
+    id: string;
+    problem_id: number;
+    problem_title: string;
+    problem_slug: string;
+    status: string;
+    created_at: string;
+    language: string;
+  }[];
+};
+
+export async function fetchDashboardData(): Promise<DashboardData> {
+  const res = await fetch(`${API_URL}/users/me/dashboard`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load dashboard data");
+  return res.json();
+}
+
