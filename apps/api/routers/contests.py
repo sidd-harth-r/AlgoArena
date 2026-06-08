@@ -172,10 +172,13 @@ def get_results(contest_id: str, db: Session = Depends(get_db)):
         results.append({
             "problem_id": pid,
             "title": p.title if p else "Unknown",
+            "slug": p.slug if p else "",
             "difficulty": p.difficulty.value if p else "medium",
             "attempts": len(prob_subs),
             "status": "ACCEPTED" if accepted else ("ATTEMPTED" if prob_subs else "NOT_ATTEMPTED"),
             "time_to_solve_seconds": time_to_solve,
+            "editorial_md": p.editorial_md if (p and contest.status == ContestStatus.FINISHED) else None,
+            "optimal_complexity": p.optimal_complexity.value if (p and contest.status == ContestStatus.FINISHED) else None,
         })
 
     return {
