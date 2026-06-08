@@ -48,7 +48,7 @@ Use a dictionary to store each number's index as you iterate. For each number, c
             ("[10,20,30,40]\n70", "[2,3]", True),
             ("[5,75,25]\n100", "[1,2]", True),
             ("[1,2,3,4,5]\n9", "[3,4]", True),
-            ("[8,1,2,7]\n9", "[0,3]", True),
+            ("[8,1,2,7]\n9", "[0,1]", True),
         ],
     },
     {

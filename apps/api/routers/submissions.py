@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session, selectinload
 
 from models.database import SessionLocal, get_db
-from models.models import Problem, Submission, SubmissionStatus
+from models.models import Problem, Submission, SubmissionStatus, _IS_SQLITE
 from routers.users import DEMO_USER_ID, ensure_demo_user
 from services.complexity import complexity_rank, infer_complexity
 from services.judge import submit_to_judge0
@@ -43,7 +43,8 @@ async def create_submission(req: SubmitRequest, background_tasks: BackgroundTask
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
     ensure_demo_user(db)
-    sub = Submission(id=uuid.uuid4(), problem_id=req.problem_id, user_id=DEMO_USER_ID, code=req.code, language=req.language, status=SubmissionStatus.PENDING, total_count=len(problem.test_cases), optimal_complexity=problem.optimal_complexity)
+    sub_id = str(uuid.uuid4()) if _IS_SQLITE else uuid.uuid4()
+    sub = Submission(id=sub_id, problem_id=req.problem_id, user_id=DEMO_USER_ID, code=req.code, language=req.language, status=SubmissionStatus.PENDING, total_count=len(problem.test_cases), optimal_complexity=problem.optimal_complexity)
     db.add(sub)
     db.commit()
     background_tasks.add_task(evaluate_submission, str(sub.id))
@@ -118,9 +119,18 @@ async def evaluate_submission(submission_id: str):
     finally:
         db.close()
 
+def normalize_output(s: str) -> str:
+    """Normalize output for comparison: collapse JSON whitespace differences."""
+    import json
+    try:
+        parsed = json.loads(s)
+        return json.dumps(parsed, separators=(",", ":"), sort_keys=True)
+    except (json.JSONDecodeError, TypeError):
+        return s.strip()
+
 
 def map_judge_status(status_id: int | None, stdout: str, expected: str) -> SubmissionStatus:
-    if status_id == 3 and stdout == expected:
+    if status_id == 3 and normalize_output(stdout) == normalize_output(expected):
         return SubmissionStatus.ACCEPTED
     if status_id == 3:
         return SubmissionStatus.WRONG_ANSWER

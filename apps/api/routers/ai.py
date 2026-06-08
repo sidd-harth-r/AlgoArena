@@ -33,7 +33,7 @@ def get_hint(submission_id: str, db: Session = Depends(get_db)):
     problem = db.query(Problem).filter(Problem.id == sub.problem_id).first()
 
     def generate():
-        for text in stream_hint(sub, problem.statement_md):
+        for text in stream_hint(sub, problem.statement_md, usage.hint_count):
             yield f"data: {text}\n\n"
         yield "data: [DONE]\n\n"
 
