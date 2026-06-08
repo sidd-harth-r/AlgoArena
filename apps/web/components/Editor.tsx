@@ -1,8 +1,20 @@
 "use client";
 
-import MonacoEditor from "@monaco-editor/react";
-import { useState } from "react";
+import dynamic from "next/dynamic";
+import { useState, useCallback } from "react";
 import { fetchSubmission, submitCode, type SubmissionResult } from "@/lib/api";
+
+const MonacoEditor = dynamic(() => import("@monaco-editor/react").then(mod => mod.default), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center" style={{ background: '#1e1e1e' }}>
+      <div className="text-center">
+        <div className="mb-3 inline-block h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: 'var(--accent-flame)', borderTopColor: 'transparent' }} />
+        <p className="mono text-xs" style={{ color: '#888' }}>Loading editor...</p>
+      </div>
+    </div>
+  ),
+});
 
 const DEFAULT_PYTHON_STUB = `import sys
 
@@ -20,6 +32,11 @@ export default function CodeEditor({ problemId }: { problemId: number }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [progress, setProgress] = useState(0);
+  const [editorReady, setEditorReady] = useState(false);
+
+  const handleEditorMount = useCallback(() => {
+    setEditorReady(true);
+  }, []);
 
   const submit = async () => {
     setLoading(true);
@@ -108,6 +125,15 @@ export default function CodeEditor({ problemId }: { problemId: number }) {
           value={code}
           onChange={(value) => setCode(value ?? "")}
           theme="vs-dark"
+          loading={
+            <div className="flex h-full items-center justify-center" style={{ background: '#1e1e1e' }}>
+              <div className="text-center">
+                <div className="mb-3 inline-block h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: 'var(--accent-flame)', borderTopColor: 'transparent' }} />
+                <p className="mono text-xs" style={{ color: '#888' }}>Initializing editor...</p>
+              </div>
+            </div>
+          }
+          onMount={handleEditorMount}
           options={{
             minimap: { enabled: false },
             fontSize: 14,

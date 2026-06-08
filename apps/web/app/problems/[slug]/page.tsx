@@ -11,7 +11,23 @@ const diffBadge: Record<string, string> = {
 
 export default async function ProblemPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const problem = await fetchProblem(slug);
+  let problem;
+  try {
+    problem = await fetchProblem(slug);
+  } catch {
+    return (
+      <main className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+        <div className="glass-card max-w-lg p-8 text-center animate-fade-in">
+          <div className="mb-4 text-4xl">⚠️</div>
+          <h2 className="mb-2 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Problem Not Available</h2>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            Could not load problem &quot;{slug}&quot;. The backend server may be down.
+          </p>
+          <a href="/problems" className="btn-primary mt-4 inline-block px-5 py-2 text-sm">← Back to Problems</a>
+        </div>
+      </main>
+    );
+  }
   return (
     <main className="grid min-h-[calc(100vh-57px)] grid-cols-1 lg:grid-cols-[minmax(0,0.9fr)_minmax(520px,1.1fr)]" style={{ background: 'var(--bg-primary)' }}>
       {/* Left: Problem Statement */}

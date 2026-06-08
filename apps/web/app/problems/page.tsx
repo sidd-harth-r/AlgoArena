@@ -14,7 +14,10 @@ async function fetchSolved(): Promise<number[]> {
 }
 
 export default async function ProblemsPage() {
-  const [problems, solvedIds] = await Promise.all([fetchProblems(), fetchSolved()]);
+  const [problems, solvedIds] = await Promise.all([
+    fetchProblems().catch(() => []),
+    fetchSolved(),
+  ]);
   const solvedSet = new Set(solvedIds);
 
   // Extract unique topics
@@ -38,9 +41,24 @@ export default async function ProblemsPage() {
         <div className="mb-8 animate-fade-in">
           <h1 className="text-3xl font-bold gradient-text">Problems</h1>
           <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-            {stats.total} problems across {allTopics.length} topics
+            {stats.total > 0
+              ? `${stats.total} problems across ${allTopics.length} topics`
+              : "Connecting to server..."}
           </p>
         </div>
+
+        {problems.length === 0 && (
+          <div className="glass-card mx-auto max-w-lg p-8 text-center animate-fade-in">
+            <div className="mb-4 text-4xl">⚠️</div>
+            <h2 className="mb-2 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Backend Unavailable</h2>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              Could not load problems. Make sure Docker containers and the FastAPI backend are running, then refresh.
+            </p>
+            <p className="mt-3 text-xs mono" style={{ color: 'var(--accent-flame)', opacity: 0.7 }}>
+              Run: .\start-all.ps1
+            </p>
+          </div>
+        )}
 
         {/* Stats Row */}
         <div className="mb-6 grid gap-3 sm:grid-cols-4 animate-fade-in animate-fade-in-delay-1">
