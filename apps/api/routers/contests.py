@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from models.database import get_db
 from models.models import Contest, ContestStatus, Difficulty, Problem, Submission, SubmissionStatus
@@ -100,8 +100,8 @@ def get_contest(contest_id: str, db: Session = Depends(get_db)):
     # Auto-end expired contests
     _check_expired(contest, db)
 
-    # Fetch problem details
-    problems = db.query(Problem).filter(Problem.id.in_(contest.problem_ids)).all()
+    # Fetch problem details with test cases
+    problems = db.query(Problem).options(selectinload(Problem.test_cases)).filter(Problem.id.in_(contest.problem_ids)).all()
     problem_map = {p.id: p for p in problems}
 
     ends_at = contest.started_at + timedelta(minutes=contest.duration_minutes)
@@ -116,6 +116,8 @@ def get_contest(contest_id: str, db: Session = Depends(get_db)):
                 "title": problem_map[pid].title if pid in problem_map else "Unknown",
                 "slug": problem_map[pid].slug if pid in problem_map else "",
                 "difficulty": problem_map[pid].difficulty.value if pid in problem_map else "medium",
+                "statement_md": problem_map[pid].statement_md if pid in problem_map else "",
+                "examples": [{"input": tc.input_data, "expected": tc.expected_out} for tc in problem_map[pid].test_cases if not tc.is_hidden] if pid in problem_map else [],
             }
             for pid in contest.problem_ids
         ],

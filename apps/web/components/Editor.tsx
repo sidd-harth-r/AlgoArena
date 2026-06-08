@@ -1,8 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { loader } from "@monaco-editor/react";
 import { useState, useCallback } from "react";
 import { fetchSubmission, submitCode, type SubmissionResult } from "@/lib/api";
+
+// Configure Monaco to load completely offline from the Next.js public directory
+loader.config({ paths: { vs: "/monaco/vs" } });
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react").then(mod => mod.default), {
   ssr: false,
@@ -10,7 +14,7 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react").then(mod => mo
     <div className="flex h-full items-center justify-center" style={{ background: '#1e1e1e' }}>
       <div className="text-center">
         <div className="mb-3 inline-block h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: 'var(--accent-flame)', borderTopColor: 'transparent' }} />
-        <p className="mono text-xs" style={{ color: '#888' }}>Loading editor...</p>
+        <p className="mono text-xs" style={{ color: '#888' }}>Initializing editor locally...</p>
       </div>
     </div>
   ),
