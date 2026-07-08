@@ -6,12 +6,12 @@ AlgoArena is a competitive programming platform tailored for Data Structures and
 
 ```mermaid
 flowchart LR
-  Web[Next.js App] --> API[FastAPI]
-  API --> DB[(PostgreSQL)]
-  API --> Judge0[Judge0 Execution Engine]
-  API --> Engine[AST Complexity Engine]
-  API --> Groq[Groq API (AI Mentor)]
-  Engine --> API
+  Web["Next.js App"] --> Backend["FastAPI Server"]
+  Backend --> DB[("PostgreSQL")]
+  Backend --> Judge0["Judge0 Execution Engine"]
+  Backend --> AST["AST Complexity Engine"]
+  Backend --> Groq["Groq AI Mentor"]
+  AST --> Backend
 ```
 
 ## Key Features
