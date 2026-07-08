@@ -9,5 +9,6 @@ tree-sitter==0.21.3
 tree-sitter-python==0.21.0
 alembic==1.14.0
 pytest==8.3.4
-anthropic==0.42.0
+groq==0.25.0
 pydantic==2.10.4
+sse-starlette==2.2.1

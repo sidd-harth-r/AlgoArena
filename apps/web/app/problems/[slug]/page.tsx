@@ -1,6 +1,7 @@
-import HintPanel from "@/components/HintPanel";
 import CodeEditor from "@/components/Editor";
 import ResultPanel from "@/components/ResultPanel";
+import HintPanel from "@/components/HintPanel";
+import ProblemWorkspaceClient from "@/components/ProblemWorkspaceClient";
 import { fetchProblem } from "@/lib/api";
 
 const diffBadge: Record<string, string> = {
@@ -76,21 +77,9 @@ export default async function ProblemPage({ params }: { params: Promise<{ slug: 
         )}
       </section>
 
-      {/* Right: Editor + Results */}
-      <ProblemWorkspace problemId={problem.id} />
+      {/* Right: Editor + Results + Mentor + Tracer */}
+      <ProblemWorkspaceClient problemId={problem.id} />
     </main>
-  );
-}
-
-function ProblemWorkspace({ problemId }: { problemId: number }) {
-  return (
-    <section className="grid min-h-[720px] grid-rows-[minmax(420px,1fr)_auto]" style={{ background: 'var(--bg-primary)' }}>
-      <CodeEditor problemId={problemId} />
-      <div className="grid border-t md:grid-cols-2" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-secondary)' }}>
-        <ResultPanel />
-        <HintPanel problemId={problemId} />
-      </div>
-    </section>
   );
 }
 

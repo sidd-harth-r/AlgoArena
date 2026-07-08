@@ -115,3 +115,62 @@ export async function fetchDashboardData(): Promise<DashboardData> {
   return res.json();
 }
 
+// ── AI Mentor Chat ─────────────────────────────────────────────────────
+
+export type MentorMessage = {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+};
+
+export async function fetchMentorHistory(submissionId: string): Promise<MentorMessage[]> {
+  const res = await fetch(`${API_URL}/mentor/${submissionId}/history`, { cache: "no-store" });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function sendMentorMessage(submissionId: string, message: string): Promise<Response> {
+  return fetch(`${API_URL}/mentor/${submissionId}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+}
+
+// ── Visual Code Tracer ─────────────────────────────────────────────────
+
+export type RecursionTreeNode = {
+  call_id: number;
+  func: string;
+  args: Record<string, string>;
+  line: number;
+  children: RecursionTreeNode[];
+  return_value: string | null;
+};
+
+export type LoopTraceStep = {
+  step: number;
+  line: number;
+  func: string;
+  locals: Record<string, string>;
+};
+
+export type TraceResult = {
+  status: "ok" | "error";
+  detail?: { message: string; line?: number; type?: string };
+  recursion_tree: RecursionTreeNode | null;
+  loop_trace: LoopTraceStep[];
+  total_steps: number;
+};
+
+export async function traceCode(code: string, stdin: string = ""): Promise<TraceResult> {
+  const res = await fetch(`${API_URL}/tracer/trace`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code, stdin }),
+  });
+  if (!res.ok) throw new Error("Tracing failed");
+  return res.json();
+}
+

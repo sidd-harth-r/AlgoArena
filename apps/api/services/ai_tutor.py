@@ -53,7 +53,6 @@ def get_fallback_hint(hint_number: int, problem_statement: str) -> str:
             "Think about how recursion or a queue/stack could simplify the tracking of your current state."
         ]
     else:
-        # Extract a short context from the first line for a generic but tailored feel
         lines = [line.strip() for line in problem_statement.strip().split('\n') if line.strip() and not line.startswith('#')]
         context = lines[0][:40] + "..." if lines else "this problem"
         hints = [
@@ -85,8 +84,10 @@ def generate_hint(hint_number: int, problem_statement: str,
                   user_complexity: str | None, optimal_complexity: str | None,
                   status: str, error_message: str | None) -> str:
     """Generate a single hint (non-streaming). Returns the hint text."""
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key or api_key.startswith("sk-ant-your-key"):
+    from dotenv import load_dotenv
+    load_dotenv(override=True)
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key or api_key.startswith("gsk_your_key"):
         return get_fallback_hint(hint_number, problem_statement)
 
     system_prompts = {1: HINT_1_SYSTEM, 2: HINT_2_SYSTEM, 3: HINT_3_SYSTEM}
@@ -95,12 +96,14 @@ def generate_hint(hint_number: int, problem_statement: str,
                                   user_complexity, optimal_complexity,
                                   status, error_message)
 
-    import anthropic
-    client = anthropic.Anthropic(api_key=api_key)
-    response = client.messages.create(
-        model="claude-haiku-4-5",
+    from groq import Groq
+    client = Groq(api_key=api_key)
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
         max_tokens=300,
-        system=system,
-        messages=[{"role": "user", "content": user_msg}],
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user_msg},
+        ],
     )
-    return response.content[0].text
+    return response.choices[0].message.content

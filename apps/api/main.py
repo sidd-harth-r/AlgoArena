@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from models.database import Base, engine
-from routers import ai, contests, problems, roadmap, submissions, users
+from routers import ai, contests, mentor, problems, roadmap, submissions, tracer, users
 
 Base.metadata.create_all(bind=engine)
 
@@ -22,6 +22,8 @@ app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(ai.router, prefix="/ai", tags=["ai"])
 app.include_router(roadmap.router, prefix="/roadmap", tags=["roadmap"])
 app.include_router(contests.router, prefix="/contests", tags=["contests"])
+app.include_router(mentor.router, prefix="/mentor", tags=["mentor"])
+app.include_router(tracer.router, prefix="/tracer", tags=["tracer"])
 
 
 @app.get("/health")

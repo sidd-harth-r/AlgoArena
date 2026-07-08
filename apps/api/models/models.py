@@ -123,6 +123,7 @@ class Submission(Base):
     user = relationship("User", back_populates="submissions")
     problem = relationship("Problem", back_populates="submissions")
     contest = relationship("Contest", back_populates="submissions")
+    mentor_messages = relationship("MentorMessage", back_populates="submission", cascade="all, delete-orphan")
 
 
 class HintUsage(Base):
@@ -149,3 +150,15 @@ class Contest(Base):
     ended_at = Column(DateTime, nullable=True)
     user = relationship("User", back_populates="contests")
     submissions = relationship("Submission", back_populates="contest")
+
+
+class MentorMessage(Base):
+    __tablename__ = "mentor_messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    submission_id = Column(UUID(as_uuid=True), ForeignKey("submissions.id"), nullable=False)
+    role = Column(String, nullable=False)  # "user" or "assistant"
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    submission = relationship("Submission", back_populates="mentor_messages")
+

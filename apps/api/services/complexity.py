@@ -11,6 +11,8 @@ class ComplexityVisitor(ast.NodeVisitor):
         self.current_function: str | None = None
         self.recursive_calls: dict[str, int] = {}
         self.memoized_functions: set[str] = set()
+        self.manual_memoized_functions: set[str] = set()
+        self.subscript_assignments: set[str] = set()
 
     def visit_For(self, node: ast.For):
         self._visit_loop(node)
@@ -31,6 +33,20 @@ class ComplexityVisitor(ast.NodeVisitor):
             self.memoized_functions.add(node.name)
         self.generic_visit(node)
         self.current_function = prior
+
+    def visit_If(self, node: ast.If):
+        if self.current_function:
+            for stmt in node.body:
+                if isinstance(stmt, ast.Return) and isinstance(stmt.value, ast.Subscript):
+                    self.manual_memoized_functions.add(self.current_function)
+        self.generic_visit(node)
+
+    def visit_Assign(self, node: ast.Assign):
+        if self.current_function:
+            for target in node.targets:
+                if isinstance(target, ast.Subscript):
+                    self.subscript_assignments.add(self.current_function)
+        self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call):
         if self.loop_depth == 0 and self._is_sort_call(node):
@@ -65,7 +81,13 @@ def infer_complexity(code: str) -> BigOClass:
     visitor.visit(tree)
     has_recursion = any(count > 0 for count in visitor.recursive_calls.values())
     branch_count = max(visitor.recursive_calls.values(), default=0)
-    has_memo = bool(set(visitor.recursive_calls) & visitor.memoized_functions)
+    
+    has_manual_memo = bool(
+        set(visitor.recursive_calls) 
+        & visitor.manual_memoized_functions 
+        & visitor.subscript_assignments
+    )
+    has_memo = bool(set(visitor.recursive_calls) & visitor.memoized_functions) or has_manual_memo
 
     if visitor.max_loop_depth >= 3:
         return BigOClass.ON3
